@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>EU Drone Theory — Full Study App</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky: #080c18;
+    --card-bg: rgba(255,255,255,0.04);
+    --card-border: rgba(0,200,255,0.13);
+    --accent: #00d4ff;
+    --accent2: #ff6b35;
+    --success: #00e676;
+    --danger: #ff4757;
+    --warning: #ffa502;
+    --text: #e8f4fd;
+    --muted: #6a8faa;
+    --pass: #00e676;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{font-family:'Syne',sans-serif;background:var(--sky);color:var(--text);min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 15% 15%,rgba(0,70,150,0.25) 0%,transparent 55%),radial-gradient(ellipse at 85% 85%,rgba(0,30,80,0.35) 0%,transparent 55%);pointer-events:none;z-index:0;}
+
+  /* STARS */
+  .stars{position:fixed;inset:0;z-index:0;pointer-events:none;}
+  .star{position:absolute;background:white;border-radius:50%;animation:twinkle var(--d) ease-in-out infinite alternate;}
+  @keyframes twinkle{from{opacity:.1;}to{opacity:.7;}}
+
+  .app{position:relative;z-index:1;max-width:820px;margin:0 auto;padding:24px 16px 80px;}
+
+  /* ===== SCREENS ===== */
+  .screen{display:none;}
+  .screen.active{display:block;}
+
+  /* ===== HOME ===== */
+  .home-header{text-align:center;padding:32px 0 40px;}
+  .drone-anim{font-size:52px;display:block;margin-bottom:16px;animation:float 3s ease-in-out infinite;}
+  @keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
+  .home-header h1{font-size:clamp(26px,5vw,42px);font-weight:800;line-height:1.1;margin-bottom:10px;}
+  .home-header h1 span{color:var(--accent);}
+  .home-header p{font-family:'Space Mono',monospace;font-size:12px;color:var(--muted);letter-spacing:1px;}
+
+  .mode-section{margin-bottom:36px;}
+  .mode-title{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--card-border);}
+
+  .exam-btn{width:100%;padding:20px 24px;background:linear-gradient(135deg,rgba(0,212,255,0.12),rgba(0,212,255,0.04));border:1px solid var(--accent);border-radius:14px;color:var(--text);font-family:'Syne',sans-serif;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:16px;transition:all .2s;margin-bottom:12px;}
+  .exam-btn:hover{background:rgba(0,212,255,0.15);transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,212,255,0.15);}
+  .exam-btn .btn-icon{font-size:28px;flex-shrink:0;}
+  .exam-btn .btn-text{text-align:left;}
+  .exam-btn .btn-label{font-size:14px;font-weight:700;display:block;}
+  .exam-btn .btn-sub{font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);display:block;margin-top:3px;}
+
+  .topic-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .topic-btn{padding:16px;background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px;color:var(--text);font-family:'Syne',sans-serif;font-size:13px;font-weight:600;cursor:pointer;text-align:left;transition:all .2s;display:flex;flex-direction:column;gap:6px;}
+  .topic-btn:hover{border-color:var(--accent);background:rgba(0,212,255,0.06);transform:translateY(-1px);}
+  .topic-btn .t-icon{font-size:22px;}
+  .topic-btn .t-name{font-size:12px;line-height:1.3;}
+  .topic-btn .t-count{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);}
+
+  /* ===== QUIZ ===== */
+  .quiz-header{margin-bottom:24px;}
+  .quiz-top{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+  .back-btn{background:rgba(255,255,255,0.06);border:1px solid var(--card-border);color:var(--muted);font-family:'Syne',sans-serif;font-size:13px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;transition:all .2s;flex-shrink:0;}
+  .back-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .quiz-title{font-size:16px;font-weight:700;flex:1;}
+  .progress-outer{background:rgba(255,255,255,0.06);border-radius:20px;height:5px;overflow:hidden;}
+  .progress-inner{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:20px;transition:width .4s ease;}
+  .progress-text{font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);text-align:right;margin-top:6px;}
+
+  /* question cards */
+  .q-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:16px;padding:24px;margin-bottom:16px;animation:fadeUp .35s ease forwards;opacity:0;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  .q-num{font-family:'Space Mono',monospace;font-size:10px;color:var(--accent);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;}
+  .q-text{font-size:15px;font-weight:600;line-height:1.5;margin-bottom:18px;}
+  .opts{display:flex;flex-direction:column;gap:9px;}
+  .opt{display:flex;align-items:flex-start;gap:11px;padding:13px 15px;border-radius:10px;border:1px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.025);cursor:pointer;transition:all .2s;font-size:13px;line-height:1.4;text-align:left;color:var(--text);font-family:'Syne',sans-serif;width:100%;}
+  .opt:hover{border-color:var(--accent);background:rgba(0,212,255,0.06);}
+  .opt.selected{border-color:var(--accent);background:rgba(0,212,255,0.1);}
+  .opt-ltr{font-family:'Space Mono',monospace;font-size:10px;font-weight:700;color:var(--accent);background:rgba(0,212,255,0.1);border-radius:5px;padding:2px 6px;flex-shrink:0;margin-top:1px;}
+  .opt.selected .opt-ltr{background:var(--accent);color:var(--sky);}
+
+  .warn-box{background:rgba(255,165,2,.1);border:1px solid rgba(255,165,2,.3);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--warning);margin-bottom:14px;font-family:'Space Mono',monospace;display:none;}
+  .submit-btn{width:100%;padding:17px;background:linear-gradient(135deg,var(--accent),#009abb);color:var(--sky);font-family:'Syne',sans-serif;font-size:15px;font-weight:800;letter-spacing:1px;border:none;border-radius:12px;cursor:pointer;margin-top:24px;transition:all .2s;text-transform:uppercase;}
+  .submit-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,212,255,.25);}
+
+  /* ===== RESULTS ===== */
+  .results-header{text-align:center;padding:24px 0 32px;}
+  .score-ring{width:150px;height:150px;border-radius:50%;border:4px solid var(--accent);display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 24px;background:rgba(0,212,255,.05);box-shadow:0 0 40px rgba(0,212,255,.2);}
+  .score-big{font-size:44px;font-weight:800;color:var(--accent);line-height:1;}
+  .score-of{font-family:'Space Mono',monospace;font-size:12px;color:var(--muted);margin-top:3px;}
+  .result-label{font-size:20px;font-weight:800;margin-bottom:6px;}
+  .result-sub{font-family:'Space Mono',monospace;font-size:12px;color:var(--muted);}
+  .stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:24px 0 32px;}
+  .stat-box{background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px;padding:14px;text-align:center;}
+  .stat-n{font-size:26px;font-weight:800;display:block;}
+  .stat-box:nth-child(1) .stat-n{color:var(--success);}
+  .stat-box:nth-child(2) .stat-n{color:var(--danger);}
+  .stat-box:nth-child(3) .stat-n{color:var(--warning);}
+  .stat-lbl{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-top:3px;display:block;}
+
+  .review-section-title{font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin:28px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--card-border);}
+  .rev-card{background:var(--card-bg);border-radius:13px;padding:20px;margin-bottom:13px;border-left:4px solid transparent;animation:fadeUp .35s ease forwards;opacity:0;}
+  .rev-card.correct{border-left-color:var(--success);}
+  .rev-card.wrong{border-left-color:var(--danger);}
+  .rev-status{font-family:'Space Mono',monospace;font-size:10px;font-weight:700;letter-spacing:2px;margin-bottom:9px;}
+  .correct .rev-status{color:var(--success);}
+  .wrong .rev-status{color:var(--danger);}
+  .rev-q{font-size:13px;font-weight:600;margin-bottom:11px;line-height:1.4;}
+  .rev-ans{font-size:12px;padding:9px 13px;border-radius:8px;margin-bottom:5px;line-height:1.4;}
+  .rev-ans.your-wrong{background:rgba(255,71,87,.12);border:1px solid rgba(255,71,87,.3);color:var(--danger);}
+  .rev-ans.correct-ans{background:rgba(0,230,118,.08);border:1px solid rgba(0,230,118,.3);color:var(--success);}
+  .rev-expl{font-size:11px;color:var(--muted);margin-top:9px;line-height:1.6;font-family:'Space Mono',monospace;padding:9px 13px;background:rgba(255,255,255,.025);border-radius:7px;}
+
+  .action-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:28px;}
+  .act-btn{padding:15px;border-radius:12px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;text-transform:uppercase;letter-spacing:.5px;}
+  .act-btn.primary{background:linear-gradient(135deg,var(--accent),#009abb);color:var(--sky);border:none;}
+  .act-btn.secondary{background:transparent;color:var(--accent);border:2px solid var(--accent);}
+  .act-btn:hover{transform:translateY(-2px);}
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+<div class="app">
+
+  <!-- ===== HOME SCREEN ===== -->
+  <div class="screen active" id="screen-home">
+    <div class="home-header">
+      <span class="drone-anim">🛸</span>
+      <h1>EU Drone Theory<br><span>Study App</span></h1>
+      <p>ALL 9 OFFICIAL TOPICS · 81 QUESTIONS</p>
+    </div>
+
+    <div class="mode-section">
+      <div class="mode-title">📋 Exam Mode</div>
+      <button class="exam-btn" onclick="startExam('mixed',40)">
+        <span class="btn-icon">🎯</span>
+        <span class="btn-text">
+          <span class="btn-label">Mixed Exam — 40 Questions</span>
+          <span class="btn-sub">Random questions from all 9 topics · 75% to pass</span>
+        </span>
+      </button>
+      <button class="exam-btn" onclick="startExam('mixed',81)">
+        <span class="btn-icon">🏆</span>
+        <span class="btn-text">
+          <span class="btn-label">Full Exam — All 81 Questions</span>
+          <span class="btn-sub">Complete question bank · Full review at the end</span>
+        </span>
+      </button>
+    </div>
+
+    <div class="mode-section">
+      <div class="mode-title">📚 Study by Topic</div>
+      <div class="topic-grid" id="topicGrid"></div>
+    </div>
+  </div>
+
+  <!-- ===== QUIZ SCREEN ===== -->
+  <div class="screen" id="screen-quiz">
+    <div class="quiz-header">
+      <div class="quiz-top">
+        <button class="back-btn" onclick="goHome()">← Home</button>
+        <div class="quiz-title" id="quizTitle"></div>
+      </div>
+      <div class="progress-outer">
+        <div class="progress-inner" id="progressBar" style="width:0%"></div>
+      </div>
+      <div class="progress-text" id="progressText">0 / 0 answered</div>
+    </div>
+    <div id="questionsContainer"></div>
+    <div class="warn-box" id="warnBox"></div>
+    <button class="submit-btn" onclick="submitQuiz()">Submit & See Results →</button>
+  </div>
+
+  <!-- ===== RESULTS SCREEN ===== -->
+  <div class="screen" id="screen-results">
+    <div class="results-header">
+      <span class="drone-anim">🏁</span>
+      <div class="score-ring">
+        <div class="score-big" id="scoreBig">0</div>
+        <div class="score-of" id="scoreOf">/ 0</div>
+      </div>
+      <div class="result-label" id="resultLabel"></div>
+      <div class="result-sub" id="resultSub"></div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-box"><span class="stat-n" id="statC">0</span><span class="stat-lbl">Correct</span></div>
+      <div class="stat-box"><span class="stat-n" id="statW">0</span><span class="stat-lbl">Wrong</span></div>
+      <div class="stat-box"><span class="stat-n" id="statS">0</span><span class="stat-lbl">Skipped</span></div>
+    </div>
+    <div class="review-section-title">Review All Questions</div>
+    <div id="reviewContainer"></div>
+    <div class="action-row">
+      <button class="act-btn primary" onclick="retryQuiz()">↺ Try Again</button>
+      <button class="act-btn secondary" onclick="goHome()">⌂ Home</button>
+    </div>
+  </div>
+
+</div>
+<script>
+// =============================================
+//  QUESTION BANK — 81 questions, 9 topics
+// =============================================
+const TOPICS = [
+  {
+    id:'airspace', icon:'🗺️', name:'Airspace & Restrictions',
+    questions:[
+      {q:"What is the maximum altitude for drone flights in the Open Category?",opts:["50m AGL","100m AGL","120m AGL","150m AGL"],a:2,exp:"120 metres Above Ground Level (AGL) is the Open Category ceiling. Near obstacles taller than 105m, you may fly up to 15m above the obstacle top."},
+      {q:"What type of airspace typically surrounds an aerodrome and requires authorisation to enter?",opts:["Class G uncontrolled airspace","Controlled Traffic Zone (CTZ)","Class A airspace","Free flight zone"],a:1,exp:"A Controlled Traffic Zone (CTZ) surrounds most airports. Drone pilots must obtain authorisation before entering, typically via a U-space service or direct contact with ATC."},
+      {q:"Which free tool can drone pilots in Sweden use to check airspace restrictions before flying?",opts:["Google Maps","Drönarkartan or DroneScout","Waze","SkyView"],a:1,exp:"Drönarkartan (dronekartan.se) and DroneScout are the standard apps used in Sweden to check airspace restrictions, CTZs, and no-fly zones before flight."},
+      {q:"What does a red zone on a drone airspace map indicate?",opts:["Recommended flying area","Area requiring special care","Prohibited or restricted airspace","Area with strong winds"],a:2,exp:"Red zones on airspace maps indicate prohibited or restricted airspace — flying there without specific authorisation is illegal."},
+      {q:"Can a drone pilot fly above 120m AGL if a building or tower nearby is taller than 120m?",opts:["No, 120m is always the absolute limit","Yes, up to 15m above the obstacle within 50m horizontal distance","Yes, with any certificate","No, they must land immediately"],a:1,exp:"Within 50 metres horizontal distance of a tall obstacle (over 105m), a pilot may fly up to 15 metres above the height of that obstacle."},
+      {q:"Which of the following areas typically has a permanent drone flight restriction?",opts:["Open countryside 10km from any town","Military airspace and installations","Farmland with no people","Coastal beaches in summer"],a:1,exp:"Military installations, prisons, nuclear facilities, and government buildings typically have permanent restrictions. Always check before flying near any sensitive installation."},
+      {q:"What is a NOTAM?",opts:["A type of drone license","Notice to Air Missions — temporary airspace information for pilots","A permit to fly near airports","A technical drone inspection certificate"],a:1,exp:"NOTAM stands for Notice to Air Missions. It is a notice issued to alert pilots to temporary changes in airspace, hazards, or restrictions — such as emergency operations or large events."},
+      {q:"In Sweden, which authority manages drone airspace rules and registration?",opts:["Polismyndigheten","Naturvårdsverket","Transportstyrelsen","Lantmäteriet"],a:2,exp:"Transportstyrelsen (the Swedish Transport Agency) is the national aviation authority responsible for drone registration, licensing, and airspace management in Sweden."},
+      {q:"What is 'U-space'?",opts:["A type of drone battery","A framework for managing drone traffic in specific airspace zones","A Swedish drone manufacturer","An EU satellite system"],a:1,exp:"U-space is the EU framework for managing unmanned aircraft traffic — providing services like registration, authorisation, tracking, and geo-awareness to enable safe drone operations."},
+    ]
+  },
+  {
+    id:'categories', icon:'📋', name:'Categories & Subcategories',
+    questions:[
+      {q:"Which EU drone operational category is for low-risk operations not requiring prior authorisation?",opts:["Certified","Specific","Open","Regulated"],a:2,exp:"The Open Category covers low-risk operations. It is divided into subcategories A1, A2, and A3. No prior operational authorisation is needed, but pilots must follow the rules for their subcategory."},
+      {q:"Which subcategory requires the A2 Certificate of Competency?",opts:["A1","A2","A3","All subcategories"],a:1,exp:"The A2 subcategory requires the A2 Certificate of Competency (A2 CofC), obtained by passing a theory exam at an approved testing centre."},
+      {q:"In which subcategory must you fly at least 150m from residential, commercial, and recreational areas?",opts:["A1","A2","A3","B3"],a:2,exp:"A3 is designed for flying far from people. The pilot must stay at least 150 metres from any residential, commercial, industrial, or recreational area."},
+      {q:"What is the Specific Category designed for?",opts:["Flights with zero risk","Higher-risk operations requiring prior authorisation from the national authority","Commercial flights over 120m","All EU drone operations"],a:1,exp:"The Specific Category covers higher-risk operations. Operators must obtain authorisation from their national aviation authority (or follow a Standard Scenario) before flying."},
+      {q:"The Certified Category is used for which type of operation?",opts:["Hobby flying in parks","High-risk operations such as carrying people or dangerous goods","Commercial photography","Mapping with GIS software"],a:1,exp:"The Certified Category covers the highest-risk operations — including carrying passengers or dangerous goods. It requires the drone and operator to be certified similarly to manned aviation."},
+      {q:"A pilot wants to fly a C2 drone close to people. Which subcategory applies?",opts:["A1","A2","A3","Specific"],a:1,exp:"C2 class drones are flown in the A2 subcategory. The minimum distance to uninvolved people is 30m in normal mode, or 5m if low-speed mode is active."},
+      {q:"Which drone class can be flown intentionally over uninvolved people in A1?",opts:["C0 only (under 250g)","C1 (under 900g)","C2 (under 4kg)","C3 (under 25kg)"],a:0,exp:"Only C0 class drones (under 250g) may be flown over uninvolved people — but never over crowds. C1 may fly close to but not intentionally over uninvolved people."},
+      {q:"What defines a 'crowd' in EU drone regulations?",opts:["More than 2 people","An assembly of people where individuals cannot move away freely","Any public outdoor event","More than 100 people in one place"],a:1,exp:"A crowd is an assembly where people cannot freely move away — such as a concert, sports event, or protest. Flying over crowds is prohibited in the Open Category regardless of drone weight."},
+      {q:"Can you fly a 600g drone in subcategory A1?",opts:["Yes, any drone under 900g can fly in A1","Yes, if it is class C1","No, A1 is only for C0 drones under 250g","No, 600g drones require Specific Category"],a:1,exp:"A 600g C1 class drone can fly in A1, but must not intentionally fly over uninvolved people. Only C0 (under 250g) may fly over uninvolved people in A1."},
+    ]
+  },
+  {
+    id:'registration', icon:'📝', name:'Registration & Certification',
+    questions:[
+      {q:"When must a drone operator register with the national aviation authority?",opts:["Only for commercial use","When the drone weighs more than 250g or has a camera, regardless of weight","Only when flying near airports","Only when flying abroad"],a:1,exp:"Registration is required when the drone weighs more than 250g OR when it carries a camera (even if under 250g). In Sweden, registration is done through Transportstyrelsen."},
+      {q:"How often must a drone operator renew their registration?",opts:["Every 6 months","Every year","Every 3 years","Every 5 years"],a:1,exp:"EU drone operator registrations must be renewed annually with the national aviation authority."},
+      {q:"Where must the operator registration number be displayed?",opts:["In the app only","Physically marked on every drone subject to registration requirements","On the pilot's clothing","Submitted to ATC before each flight"],a:1,exp:"The operator registration number must be physically marked on all drones that require registration — so authorities can identify the operator if the drone is found or causes an incident."},
+      {q:"What is the minimum age to fly a drone independently in the Open Category in most EU countries?",opts:["12","14","16","18"],a:2,exp:"The minimum age is 16 in most EU countries. Younger pilots (14+ in some countries) may fly under direct supervision of a registered adult operator."},
+      {q:"How long is an EU drone pilot competency certificate valid?",opts:["1 year","3 years","5 years","10 years"],a:2,exp:"EU drone pilot competency certificates (for A1/A3 and A2) are valid for 5 years and must be renewed before expiry."},
+      {q:"What test must a pilot pass to fly in A1/A3 subcategories?",opts:["A practical flight test at an aerodrome","An online theoretical knowledge test through the national authority","A full instrument rating exam","No test — just registration is needed"],a:1,exp:"To fly in A1/A3, pilots must pass an online theoretical knowledge test administered by the national authority (Transportstyrelsen in Sweden). The test covers airspace, regulations, and safety."},
+      {q:"The A2 Certificate of Competency requires what in addition to the basic online test?",opts:["A medical examination","A theoretical exam at an approved testing centre plus a self-declaration of practical skills","A full flight test with an examiner","Proof of insurance"],a:1,exp:"The A2 CofC requires a theoretical exam at an approved testing centre (harder than the online test) plus a self-declaration that the pilot has acquired the necessary practical skills."},
+      {q:"Is drone third-party liability insurance mandatory in Sweden?",opts:["No, it is optional","Yes, it is mandatory for all drones over 250g","Only for commercial operations","Only for drones over 20kg"],a:1,exp:"Third-party liability insurance is mandatory in Sweden (and across most of the EU) for drones over 250g. This covers damage or injury caused to third parties during flight."},
+      {q:"If a registered drone is sold, what must the seller do?",opts:["Nothing — the drone's registration transfers automatically","Notify the national authority and update or transfer the registration","Destroy the operator ID marking","Apply for a new certificate"],a:1,exp:"When a registered drone is sold, the registration and operator ID do not automatically transfer. The seller should update the registration and the new owner must register themselves."},
+    ]
+  },
+  {
+    id:'safety', icon:'⚠️', name:'Safety & Emergency Procedures',
+    questions:[
+      {q:"What should a drone pilot do if they lose Visual Line of Sight (VLOS)?",opts:["Activate return-to-home and continue monitoring remotely","Gain altitude to reacquire visual contact","Land the drone safely as quickly as possible","Switch to FPV goggles"],a:2,exp:"If VLOS is lost, the flight must be terminated safely and immediately. The drone should be landed in the nearest safe area. Continuing the flight would be illegal in the Open Category."},
+      {q:"A manned helicopter approaches your flying area. What do you do?",opts:["Gain altitude to avoid the helicopter's path","Maintain position — drones have equal right of way","Immediately manoeuvre or land to give way to the manned aircraft","Sound an alarm to alert the helicopter"],a:2,exp:"Manned aircraft ALWAYS have priority. Drone pilots must immediately take action to yield — typically by landing or manoeuvring well clear. This is a fundamental rule of air law."},
+      {q:"What is a pre-flight check and why is it required?",opts:["A check done monthly to maintain insurance validity","An assessment of the drone's condition, battery, airspace, and weather before every flight","A check required only for commercial operations","A check done once when you buy a new drone"],a:1,exp:"A pre-flight check must be done before EVERY flight. It includes checking: drone battery and physical condition, controller signal, local airspace restrictions, weather conditions, and the planned flight area for hazards."},
+      {q:"What should a pilot do if the drone malfunctions mid-flight?",opts:["Continue flying to the planned landing point","Attempt to land as safely as possible to minimise risk to people and property","Activate full speed to return home quickly","Call the national aviation authority immediately"],a:1,exp:"In a malfunction, the pilot must act to minimise risk — attempting the safest possible landing while avoiding people, property, and other aircraft. Document the incident afterwards."},
+      {q:"Which weather condition is most dangerous for drone flight?",opts:["Light cloud cover","Temperatures below 15°C","Strong winds, rain, or thunderstorms","Light fog at 500m visibility"],a:2,exp:"Strong winds can make control impossible and cause crashes. Rain damages electronics. Thunderstorms create extreme risk. Pilots must always check weather before and during flight."},
+      {q:"What is the purpose of a return-to-home (RTH) function?",opts:["It replaces the need for VLOS","It is a safety backup — the drone returns to its launch point automatically if signal is lost","It is required by EU law for all drones","It allows flying beyond the registration area"],a:1,exp:"RTH is a safety backup feature. It does not replace the pilot's responsibility to maintain VLOS and active control. Pilots must not rely on RTH as a primary control method."},
+      {q:"When is it safe to fly a drone over a public road?",opts:["Always — roads are public space","Never in the Open Category without specific authorisation","Only on weekends","Only if traffic is stopped"],a:1,exp:"Flying over roads with moving traffic is not permitted in the Open Category without authorisation, as a crash could endanger road users. This falls under protection of uninvolved persons."},
+      {q:"What action should a pilot take before flying in an unknown area?",opts:["Just launch and observe the area from the air","Check airspace maps, look for obstacles, identify hazards, and plan an emergency landing spot","Ask a local person if it seems safe","Only check the weather forecast"],a:1,exp:"Before flying in any area, the pilot must check airspace restrictions, identify physical hazards (pylons, cables, trees), assess wind and weather, and identify a safe emergency landing spot."},
+      {q:"How should a drone pilot react if they see another drone in their flight area?",opts:["Increase altitude to create separation","Maintain position and continue flying — airspace is shared","Communicate with the other pilot, create separation, and if necessary land","Land immediately without any assessment"],a:2,exp:"If another drone is in the area, the pilot should try to communicate with the other operator, maintain safe separation, and if the risk of collision cannot be managed, land safely."},
+    ]
+  },
+  {
+    id:'performance', icon:'⚙️', name:'Drone Performance & Limitations',
+    questions:[
+      {q:"How does wind speed affect drone flight safety?",opts:["Wind only affects fixed-wing aircraft, not multirotor drones","Strong winds can exceed the drone's thrust capacity, causing loss of control","Wind only affects battery consumption, not control","Drones are unaffected by winds below 50 km/h"],a:1,exp:"Wind can overpower a drone's motors, causing drift or complete loss of control. Always check the drone's maximum wind resistance specification and check forecasts. Gusts are especially dangerous."},
+      {q:"What effect does cold temperature have on LiPo batteries used in drones?",opts:["It increases battery capacity","It has no effect on performance","It significantly reduces battery capacity and flight time","It improves battery efficiency"],a:2,exp:"Cold temperatures reduce LiPo battery chemical activity, significantly reducing capacity. In cold weather, batteries should be warmed before flight and flight times will be shorter."},
+      {q:"What is the main risk of flying a drone with a low battery warning active?",opts:["The video feed may disconnect","The drone may run out of power mid-flight and crash","The GPS signal may weaken","The controller range will decrease"],a:1,exp:"Flying with low battery is a major risk. If the battery is depleted mid-flight, the drone loses power and falls. Always respect low battery warnings and return to land with adequate reserve."},
+      {q:"How does high altitude (above sea level) affect drone performance?",opts:["It improves efficiency because air is cleaner","Thinner air reduces propeller efficiency, reducing lift and performance","It has no effect on performance","It extends battery life"],a:1,exp:"At high altitude, air density decreases. This reduces propeller efficiency and lift capacity. The drone may struggle to maintain altitude and consume more battery."},
+      {q:"What is electromagnetic interference (EMI) and how can it affect a drone?",opts:["It is a type of weather condition","Interference from radio sources that can disrupt control signals or GPS","A propeller imbalance issue","A software malfunction"],a:1,exp:"EMI from power lines, radio towers, or dense urban areas can disrupt the control link or GPS signal, potentially causing loss of control. Avoid flying near strong radio transmitters."},
+      {q:"Why is it important to perform a compass calibration when flying in a new location?",opts:["It is required by EU law before each flight","Local magnetic variations can affect heading accuracy — calibration ensures correct orientation","It is only needed for commercial flights","Compass calibration affects battery efficiency"],a:1,exp:"Magnetic interference varies by location. If the compass is not calibrated to local conditions, the drone may drift or behave unpredictably. Always calibrate in a new location."},
+      {q:"What does 'fly-away' mean in drone operations?",opts:["The drone intentionally gains altitude","The drone loses connection and flies uncontrollably in an unpredictable direction","A normal landing procedure","A type of emergency return mode"],a:1,exp:"A fly-away occurs when the drone loses control link or GPS orientation and flies in an uncontrolled direction. It is one of the most serious malfunctions and often results in loss of the aircraft."},
+      {q:"How does propeller damage affect flight safety?",opts:["Minor chips have no effect on flight","Any damage to propellers can cause vibration, reduced efficiency, or catastrophic failure","Only fully broken propellers are dangerous","Propeller damage only affects video quality"],a:1,exp:"Even minor propeller damage creates vibration, reduces thrust efficiency, and can lead to failure. Propellers should be visually inspected before every flight and replaced if damaged."},
+      {q:"What is the recommended action when a drone shows an 'obstacle avoidance' alert during flight?",opts:["Ignore it and continue — the system will handle it","Slow down, assess the obstacle, and manoeuvre carefully","Increase speed to clear the obstacle faster","Activate RTH immediately"],a:1,exp:"Obstacle avoidance systems are aids, not guarantees. When an alert triggers, the pilot should slow down, visually assess the obstacle, and take manual control to manoeuvre safely around it."},
+    ]
+  },
+  {
+    id:'privacy', icon:'🔒', name:'Privacy & Data Protection',
+    questions:[
+      {q:"Which EU regulation governs the collection and use of personal data captured by drones?",opts:["The EU Drone Regulation (2019/945)","The General Data Protection Regulation (GDPR)","The European Aviation Safety Agency Act","The EU Data Freedom Act"],a:1,exp:"GDPR (General Data Protection Regulation) applies whenever drones capture footage or images of identifiable people. Operators must handle this data lawfully, for specific purposes, and protect it appropriately."},
+      {q:"When flying a camera drone over a public area, what is the pilot's responsibility regarding privacy?",opts:["No responsibility — public areas are freely filmable","The pilot must avoid unnecessarily recording identifiable individuals and handle data per GDPR","Recording is unrestricted as long as no audio is captured","Privacy rules only apply to commercial operations"],a:1,exp:"Even in public areas, GDPR applies to footage of identifiable people. Pilots should avoid unnecessary recording of individuals, store data securely, and delete footage not needed for the stated purpose."},
+      {q:"Is it legal to fly a camera drone over private property without the owner's consent?",opts:["Yes — airspace is public above 30 metres","Generally not — property owners have a reasonable expectation of privacy","Yes, if flying in A3 category","Yes, if the footage is deleted within 24 hours"],a:1,exp:"Flying over private property and capturing footage of people there may violate privacy rights. In Sweden, the operator may need permission. Always consider privacy implications before filming over private land."},
+      {q:"Under GDPR, for how long can a drone operator retain footage containing identifiable individuals?",opts:["Indefinitely if stored securely","Only as long as necessary for the stated purpose","Up to 5 years","There is no time limit"],a:1,exp:"GDPR requires that personal data (including video of identifiable people) is kept only as long as necessary for the purpose it was collected. Unnecessary footage should be deleted promptly."},
+      {q:"A bystander asks you to delete footage you captured of them without their knowledge. What should you do?",opts:["Refuse — you were in a public area","Comply with their request — they have the right to erasure under GDPR","Explain that drone footage is exempt from GDPR","Refer them to Transportstyrelsen"],a:1,exp:"Under GDPR's 'right to erasure', individuals can request deletion of personal data about them if it was captured without valid legal basis. Pilots should generally comply with such requests."},
+      {q:"What is 'data minimisation' in the context of drone operations?",opts:["Using smaller file sizes for footage","Only collecting the personal data that is necessary for the specific, stated purpose","Deleting all footage after 24 hours","Only flying in areas with fewer people"],a:1,exp:"Data minimisation means only collecting what is necessary. For drone operations, this means: only recording the area and duration needed, avoiding unnecessary capture of people's images."},
+    ]
+  },
+  {
+    id:'insurance', icon:'🛡️', name:'Insurance & Liability',
+    questions:[
+      {q:"Is third-party liability insurance mandatory for drones over 250g in the EU?",opts:["No — it is strongly recommended but optional","Yes — it is mandatory across the EU for drones over 250g","Only for commercial operations","Only in controlled airspace"],a:1,exp:"EU Regulation 2021/1147 makes third-party liability insurance mandatory for drones over 250g across the EU. This insurance covers injury or property damage caused to third parties."},
+      {q:"What does third-party liability insurance cover for drone operators?",opts:["Repair costs for the drone itself","Damage or injury caused to other people or their property during flight","Theft of the drone","Loss of footage due to technical failure"],a:1,exp:"Third-party liability insurance covers claims from people who are injured or whose property is damaged by the drone. It does NOT cover the drone itself — that requires separate hull insurance."},
+      {q:"If a drone crashes and damages a car, who is legally responsible?",opts:["The drone manufacturer","The remote pilot and/or operator","The owner of the airspace","No one — it is considered an act of God"],a:1,exp:"The remote pilot (and/or operator if different) is legally responsible for damage caused by their drone. This is why third-party liability insurance is mandatory — to ensure victims can be compensated."},
+      {q:"Does standard home or car insurance typically cover drone incidents?",opts:["Yes — all home policies cover drone liability automatically","Not usually — drone liability typically requires a specific policy or add-on","Yes, but only for drones under 250g","Yes, if the drone is stored at home"],a:1,exp:"Standard home insurance policies typically do not cover drone operations. A dedicated drone insurance policy or a specific add-on to an existing policy is needed to ensure proper coverage."},
+      {q:"What is hull insurance for a drone?",opts:["Insurance required by EU law for all drones","Optional insurance that covers repair or replacement of the drone itself if damaged","Insurance covering third-party claims","Insurance for the drone's payload/camera"],a:1,exp:"Hull insurance covers damage to the drone itself — crashes, flyaways, water damage. It is optional but recommended, especially for expensive equipment. It is separate from mandatory third-party liability insurance."},
+      {q:"A drone pilot is flying for a client as a commercial service. Who is responsible for ensuring valid insurance?",opts:["The client commissioning the work","The drone pilot/operator","The national aviation authority","The EU"],a:1,exp:"The operator conducting the flight is responsible for ensuring valid, appropriate insurance is in place. If working commercially, the operator should ensure their policy covers commercial operations."},
+    ]
+  },
+  {
+    id:'environment', icon:'🌿', name:'Environment & Nature',
+    questions:[
+      {q:"What must a drone pilot check before flying in a nature reserve or national park?",opts:["Only wind speed","Whether drone flights are permitted — many nature reserves have total bans or seasonal restrictions","Only the altitude limit","Whether there are other pilots in the area"],a:1,exp:"Many nature reserves and national parks in Sweden and across Europe have total or seasonal drone flight bans to protect wildlife. Always check specific rules before flying in or near protected areas."},
+      {q:"During which season is it especially important to avoid flying near forests and nesting areas?",opts:["Autumn — falling leaves create hazards","Winter — cold affects animals","Spring and early summer — bird nesting and breeding season","Summer — high temperatures affect batteries"],a:2,exp:"Spring and early summer is the critical bird nesting and breeding season. Drone noise and presence can cause birds to abandon nests, eggs, or chicks. Pilots should keep well clear of nesting areas during this period."},
+      {q:"Is it permitted to fly a drone over a beach with nesting sea birds during breeding season?",opts:["Yes — beaches are public spaces","Not without specific permission — nesting wildlife must be protected","Yes, if staying above 120m","Yes, during early morning hours only"],a:1,exp:"Flying over nesting sea birds during breeding season can cause significant disturbance and nest abandonment. It is illegal under wildlife protection laws in most EU countries and should always be avoided."},
+      {q:"What environmental impact can drone noise have on wildlife?",opts:["No impact — animals quickly adapt to drone sounds","Significant stress, escape behaviour, and potential abandonment of young or nests","Only impacts birds, not mammals","Only impacts animals within 10 metres"],a:1,exp:"Drone noise causes acute stress in many animals — triggering escape behaviour, separating mothers from young, and causing nest abandonment. This impact extends well beyond what is visible to the pilot."},
+      {q:"Under Sweden's Allemansrätten, can a drone be flown over private land?",opts:["Yes — Allemansrätten gives full access to all land","Partially — Allemansrätten covers physical access but drone overflight may still violate privacy rights and local regulations","Yes, but only below 30 metres","No — Allemansrätten does not apply to drone operations at all"],a:1,exp:"Allemansrätten covers physical access to nature but does not automatically grant the right to fly drones over private property. Privacy rights (GDPR) and local restrictions still apply."},
+      {q:"What should a pilot do if they notice that wildlife is reacting to their drone during flight?",opts:["Continue — wildlife will settle after a few minutes","Immediately move the drone away from the wildlife or land","Reduce altitude to get below the animal's line of sight","Increase speed to reduce time disturbing the area"],a:1,exp:"If wildlife shows signs of disturbance (fleeing, calling, aggressive behaviour), the responsible action is to immediately move the drone away or land. Continued disturbance can violate wildlife protection laws."},
+    ]
+  },
+  {
+    id:'regulations', icon:'⚖️', name:'EU Regulations & Air Law',
+    questions:[
+      {q:"Which EU regulation forms the main legal framework for drone operations in the Open Category?",opts:["EU Regulation 2018/1139","EU Regulation 2019/945 and 2019/947","EASA Decision 2020/045","EU Aviation Directive 2017/001"],a:1,exp:"EU Regulations 2019/945 (product requirements for UAS) and 2019/947 (operational rules) form the core legal framework for drone operations across the EU, including Sweden."},
+      {q:"What does EASA stand for?",opts:["European Airspace Safety Administration","European Aviation Safety Agency","European Aerospace Standards Authority","Environmental Aviation Safety Act"],a:1,exp:"EASA is the European Union Aviation Safety Agency. It is the EU body responsible for civil aviation safety, including setting drone regulations adopted by EU member states."},
+      {q:"Can EU drone pilot certificates be used in all EU member states?",opts:["No — each country has its own system","Yes — EU pilot certificates are valid across all EU member states","Only in the Schengen area","Only for commercial operations"],a:1,exp:"EU drone pilot competency certificates (from the online test or A2 CofC) are valid across all EU member states. Registration may still need to be acknowledged in the host country for longer stays."},
+      {q:"What is a Standard Scenario (STS) in EU drone regulations?",opts:["A type of flight plan for commercial operators","A pre-defined set of conditions under which Specific Category operations can be conducted without individual authorisation","A training exercise for new pilots","A mandatory reporting format after incidents"],a:1,exp:"Standard Scenarios (STS-01 and STS-02) are pre-defined operational frameworks in the Specific Category. Operators who meet the STS requirements can conduct those operations without individual authorisation from the authority."},
+      {q:"What is the legal requirement for drone incident reporting in the EU?",opts:["Voluntary only — no legal requirement exists","Serious incidents and accidents must be reported to the national aviation authority","Only incidents involving injury must be reported","Only commercial operators must report incidents"],a:1,exp:"Serious incidents and accidents involving drones must be reported to the national aviation authority. In Sweden, this is Transportstyrelsen. This applies to all operators, including recreational ones."},
+      {q:"When did the current EU drone regulatory framework come into force?",opts:["January 2015","June 2020 (with transition periods extending to 2023)","March 2018","January 2025"],a:1,exp:"The EU drone regulations (2019/945 and 2019/947) came into force from June 2020, with transition periods allowing time for manufacturers and operators to comply with the new class marking and registration requirements."},
+      {q:"Can a national EU authority add stricter rules on top of EU drone regulations?",opts:["No — EU regulations fully replace all national rules","Yes — member states can impose stricter national rules where the EU framework allows","Only for commercial operations","Only for drones over 25kg"],a:1,exp:"EU drone regulations set a common baseline, but member states can add stricter rules in specific areas — such as additional restrictions in national parks, near critical infrastructure, or over populated areas."},
+      {q:"What is geo-awareness or geo-fencing in drone technology?",opts:["A GPS tracking system for stolen drones","A system that alerts the pilot or limits flight when approaching restricted airspace","A type of autopilot for agricultural drones","A registration system linked to the operator ID"],a:1,exp:"Geo-awareness systems use GPS and a database of restricted zones to alert pilots when they are approaching restricted airspace. Geo-fencing can physically prevent the drone from entering restricted areas."},
+      {q:"What is the operator's responsibility if they discover their drone does not comply with EU class markings?",opts:["Continue using it until it breaks","Only fly it in A3 — away from people","Check if it can be operated under transitional rules, or cease operation until compliant","Report it to EASA immediately"],a:1,exp:"If a drone lacks required class markings, the operator must check whether transitional rules allow continued operation (older drones had transition periods), or restrict operations to what is legally permitted."},
+    ]
+  }
+];
+
+// Build flat bank
+const ALL_QUESTIONS = [];
+TOPICS.forEach(t => {
+  t.questions.forEach(q => {
+    ALL_QUESTIONS.push({...q, topicName: t.name, topicIcon: t.icon});
+  });
+});
+
+// =============================================
+//  STATE
+// =============================================
+let currentQuestions = [];
+let userAnswers = [];
+let currentMode = '';
+let currentTopicName = '';
+
+// =============================================
+//  STARS
+// =============================================
+(function createStars(){
+  const c = document.getElementById('stars');
+  for(let i=0;i<70;i++){
+    const s = document.createElement('div');
+    s.className='star';
+    const sz = Math.random()*2.5+0.5;
+    s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${Math.random()*3+2}s;animation-delay:${Math.random()*3}s;`;
+    c.appendChild(s);
+  }
+})();
+
+// =============================================
+//  BUILD HOME
+// =============================================
+(function buildHome(){
+  const grid = document.getElementById('topicGrid');
+  TOPICS.forEach(t => {
+    const btn = document.createElement('button');
+    btn.className='topic-btn';
+    btn.innerHTML=`<span class="t-icon">${t.icon}</span><span class="t-name">${t.name}</span><span class="t-count">${t.questions.length} questions</span>`;
+    btn.onclick=()=>startTopic(t);
+    grid.appendChild(btn);
+  });
+})();
+
+// =============================================
+//  NAVIGATION
+// =============================================
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function goHome(){
+  showScreen('home');
+}
+
+// =============================================
+//  START EXAM (mixed mode)
+// =============================================
+function startExam(mode, count){
+  currentMode = 'exam';
+  currentTopicName = count===81 ? 'Full Exam — 81 Questions' : 'Mixed Exam — 40 Questions';
+  const shuffled = [...ALL_QUESTIONS].sort(()=>Math.random()-0.5);
+  currentQuestions = shuffled.slice(0, Math.min(count, shuffled.length));
+  userAnswers = new Array(currentQuestions.length).fill(null);
+  buildQuizScreen();
+  showScreen('quiz');
+}
+
+// =============================================
+//  START TOPIC
+// =============================================
+function startTopic(topic){
+  currentMode = 'topic';
+  currentTopicName = topic.icon+' '+topic.name;
+  currentQuestions = [...topic.questions].sort(()=>Math.random()-0.5);
+  userAnswers = new Array(currentQuestions.length).fill(null);
+  buildQuizScreen();
+  showScreen('quiz');
+}
+
+// =============================================
+//  BUILD QUIZ SCREEN
+// =============================================
+function buildQuizScreen(){
+  document.getElementById('quizTitle').textContent = currentTopicName;
+  updateProgress();
+  const container = document.getElementById('questionsContainer');
+  container.innerHTML='';
+  const LTRS=['A','B','C','D'];
+
+  currentQuestions.forEach((q,qi)=>{
+    const card=document.createElement('div');
+    card.className='q-card';
+    card.style.animationDelay=(qi*0.04)+'s';
+    card.innerHTML=`
+      <div class="q-num">Question ${qi+1} of ${currentQuestions.length}</div>
+      <div class="q-text">${q.q}</div>
+      <div class="opts">${q.opts.map((o,oi)=>`
+        <button class="opt" id="opt-${qi}-${oi}" onclick="selectAns(${qi},${oi})">
+          <span class="opt-ltr">${LTRS[oi]}</span><span>${o}</span>
+        </button>`).join('')}
+      </div>`;
+    container.appendChild(card);
+  });
+
+  document.getElementById('warnBox').style.display='none';
+}
+
+// =============================================
+//  SELECT ANSWER
+// =============================================
+function selectAns(qi,oi){
+  if(userAnswers[qi]!==null){
+    const prev=document.getElementById(`opt-${qi}-${userAnswers[qi]}`);
+    if(prev) prev.classList.remove('selected');
+  }
+  userAnswers[qi]=oi;
+  const btn=document.getElementById(`opt-${qi}-${oi}`);
+  if(btn) btn.classList.add('selected');
+  updateProgress();
+}
+
+function updateProgress(){
+  const answered=userAnswers.filter(a=>a!==null).length;
+  const pct=(answered/currentQuestions.length)*100;
+  document.getElementById('progressBar').style.width=pct+'%';
+  document.getElementById('progressText').textContent=`${answered} / ${currentQuestions.length} answered`;
+}
+
+// =============================================
+//  SUBMIT
+// =============================================
+function submitQuiz(){
+  const unanswered=userAnswers.filter(a=>a===null).length;
+  const warn=document.getElementById('warnBox');
+  if(unanswered>0){
+    warn.style.display='block';
+    warn.textContent=`⚠ ${unanswered} question${unanswered>1?'s':''} unanswered. Please answer all questions.`;
+    warn.scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
+  warn.style.display='none';
+  showResults();
+}
+
+// =============================================
+//  RESULTS
+// =============================================
+function showResults(){
+  let correct=0,wrong=0,skipped=0;
+  userAnswers.forEach((a,i)=>{
+    if(a===null) skipped++;
+    else if(a===currentQuestions[i].a) correct++;
+    else wrong++;
+  });
+
+  const total=currentQuestions.length;
+  const pct=Math.round((correct/total)*100);
+
+  document.getElementById('scoreBig').textContent=correct;
+  document.getElementById('scoreOf').textContent='/ '+total;
+  document.getElementById('statC').textContent=correct;
+  document.getElementById('statW').textContent=wrong;
+  document.getElementById('statS').textContent=skipped;
+
+  let label,sub;
+  if(pct>=75){
+    label='✅ Passed! You are ready to fly.';
+    sub=pct+'% — Above the 75% EU passing threshold. Well done, Commander!';
+  } else if(pct>=55){
+    label='📚 Almost there — keep studying.';
+    sub=pct+'% — You need 75% to pass. Review the explanations below carefully.';
+  } else {
+    label='🔁 More study needed — you will get there.';
+    sub=pct+'% — Review all explanations below. Every wrong answer is a lesson.';
+  }
+
+  document.getElementById('resultLabel').textContent=label;
+  document.getElementById('resultSub').textContent=sub;
+
+  const rc=document.getElementById('reviewContainer');
+  rc.innerHTML='';
+  const LTRS=['A','B','C','D'];
+
+  currentQuestions.forEach((q,i)=>{
+    const ans=userAnswers[i];
+    const isCorrect=ans===q.a;
+    const card=document.createElement('div');
+    card.className='rev-card '+(isCorrect?'correct':'wrong');
+    card.style.animationDelay=(i*0.03)+'s';
+
+    let ansHTML='';
+    if(!isCorrect && ans!==null){
+      ansHTML+=`<div class="rev-ans your-wrong">Your answer: ${LTRS[ans]}. ${q.opts[ans]}</div>`;
+    }
+    ansHTML+=`<div class="rev-ans correct-ans">✓ Correct: ${LTRS[q.a]}. ${q.opts[q.a]}</div>`;
+
+    card.innerHTML=`
+      <div class="rev-status">${isCorrect?'✓ CORRECT':'✗ WRONG'} ${q.topicIcon||''}</div>
+      <div class="rev-q">Q${i+1}. ${q.q}</div>
+      ${ansHTML}
+      <div class="rev-expl">💡 ${q.exp}</div>`;
+    rc.appendChild(card);
+  });
+
+  showScreen('results');
+}
+
+// =============================================
+//  RETRY / RESET
+// =============================================
+function retryQuiz(){
+  userAnswers=new Array(currentQuestions.length).fill(null);
+  currentQuestions=[...currentQuestions].sort(()=>Math.random()-0.5);
+  buildQuizScreen();
+  showScreen('quiz');
+}
+</script>
+<a href="index.html" style="position:fixed;bottom:20px;left:20px;z-index:9998;display:flex;align-items:center;gap:8px;background:rgba(9,12,22,.95);border:1px solid rgba(0,212,255,.25);color:#00d4ff;text-decoration:none;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;padding:8px 14px;border-radius:8px;letter-spacing:1px;backdrop-filter:blur(10px);transition:all .2s;" onmouseover="this.style.borderColor='rgba(0,212,255,.6)'" onmouseout="this.style.borderColor='rgba(0,212,255,.25)'">⌂ HOME</a>
+</body>
+</html>
