@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Recovery Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Barlow+Condensed:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#06080e;--panel:#0a0d18;--card:#0e1220;--border:#182030;
+  --accent:#00d4ff;--green:#00ff9d;--red:#ff3355;--yellow:#ffd700;
+  --orange:#ff6b35;--purple:#b06aff;--text:#dce8f5;--dim:#4a6070;
+  --muted:#111827;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'IBM Plex Mono',monospace;background:var(--bg);color:var(--text);min-height:100vh;}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.025) 2px,rgba(0,0,0,.025) 4px);pointer-events:none;z-index:9999;}
+
+/* HEADER */
+.hdr{background:var(--panel);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:100;}
+.logo{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;letter-spacing:2px;color:var(--accent);}
+.logo span{color:var(--text);}
+.hdr-right{display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+.last-refresh{font-size:10px;color:var(--dim);}
+.refresh-btn{padding:6px 14px;background:transparent;border:1px solid var(--border);color:var(--dim);font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;border-radius:6px;cursor:pointer;letter-spacing:1px;transition:all .2s;}
+.refresh-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* TABS */
+.tabs{display:flex;background:var(--panel);border-bottom:1px solid var(--border);overflow-x:auto;}
+.tab{padding:10px 20px;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none;font-family:'IBM Plex Mono',monospace;white-space:nowrap;transition:all .2s;}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+/* PAGES */
+.page{display:none;padding:20px;max-width:1100px;margin:0 auto;}
+.page.active{display:block;}
+.sec{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+
+/* SUMMARY CARDS */
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:20px;}
+.scard{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;}
+.scard-label{font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;}
+.scard-value{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:700;}
+.scard-value.g{color:var(--green);}
+.scard-value.r{color:var(--red);}
+.scard-value.y{color:var(--yellow);}
+.scard-value.a{color:var(--accent);}
+.scard-sub{font-size:10px;color:var(--dim);margin-top:3px;}
+
+/* RECOVERY BAR */
+.recovery-bar-wrap{height:6px;background:var(--muted);border-radius:3px;overflow:hidden;margin-top:6px;}
+.recovery-bar{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--red),var(--yellow));transition:width .5s;}
+.recovery-bar.good{background:linear-gradient(90deg,var(--yellow),var(--green));}
+
+/* ADD POSITION */
+.add-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:14px;}
+.ig{display:flex;flex-direction:column;gap:5px;}
+.il{font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;}
+.if{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:9px 12px;border-radius:7px;outline:none;width:100%;transition:border-color .2s;}
+.if:focus{border-color:var(--accent);}
+.isel{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:12px;padding:9px 12px;border-radius:7px;outline:none;width:100%;cursor:pointer;}
+
+/* BUTTONS */
+.btn{padding:10px 20px;border:none;border-radius:8px;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;transition:all .2s;}
+.btn-primary{background:var(--accent);color:var(--bg);}
+.btn-green{background:var(--green);color:var(--bg);}
+.btn-orange{background:var(--orange);color:var(--bg);}
+.btn-ghost{background:transparent;color:var(--dim);border:1px solid var(--border);}
+.btn-ghost:hover{border-color:var(--dim);color:var(--text);}
+.btn:hover{opacity:.85;}
+.btn-full{width:100%;}
+
+/* HOLDINGS TABLE */
+.tbl-wrap{overflow-x:auto;margin-bottom:20px;}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:800px;}
+th{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);padding:9px 10px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;}
+th:hover{color:var(--text);}
+td{padding:10px;border-bottom:1px solid rgba(24,32,48,.6);vertical-align:middle;white-space:nowrap;}
+tr:hover td{background:rgba(255,255,255,.015);}
+.coin-cell{display:flex;align-items:center;gap:8px;}
+.coin-name{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;color:var(--text);}
+.coin-full{font-size:10px;color:var(--dim);}
+.pnl-bar-wrap{width:80px;height:4px;background:var(--muted);border-radius:2px;overflow:hidden;display:inline-block;vertical-align:middle;margin-left:6px;}
+.pnl-bar{height:100%;border-radius:2px;}
+.del-btn{background:none;border:none;color:var(--dim);cursor:pointer;font-size:13px;padding:2px 6px;}
+.del-btn:hover{color:var(--red);}
+.edit-btn{background:none;border:none;color:var(--dim);cursor:pointer;font-size:12px;padding:2px 6px;font-family:'IBM Plex Mono',monospace;}
+.edit-btn:hover{color:var(--accent);}
+
+/* ROTATION SIMULATOR */
+.sim-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;}
+.sim-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.sim-side{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px;}
+.sim-title{font-size:11px;font-weight:700;color:var(--text);margin-bottom:14px;letter-spacing:1px;}
+.sim-result{background:rgba(0,255,157,.05);border:1px solid rgba(0,255,157,.2);border-radius:10px;padding:16px;margin-top:16px;}
+.sim-result-row{display:flex;justify-content:space-between;padding:5px 0;font-size:12px;border-bottom:1px solid rgba(24,32,48,.5);}
+.sim-result-row:last-child{border-bottom:none;}
+.sim-result-row span:last-child{font-weight:700;}
+
+/* STRATEGY PANEL */
+.strategy-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;}
+.strategy-title{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;margin-bottom:14px;}
+.strategy-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid rgba(24,32,48,.5);font-size:12px;line-height:1.6;}
+.strategy-item:last-child{border-bottom:none;}
+.strategy-icon{font-size:20px;flex-shrink:0;width:28px;}
+.strategy-text{color:#8ab0c0;}
+.strategy-text strong{color:var(--text);}
+.verdict-box{border-radius:10px;padding:16px;margin-bottom:16px;border-left:4px solid var(--yellow);}
+.verdict-box.good{border-left-color:var(--green);background:rgba(0,255,157,.04);}
+.verdict-box.bad{border-left-color:var(--red);background:rgba(255,51,85,.04);}
+.verdict-box.neutral{border-left-color:var(--yellow);background:rgba(255,215,0,.03);}
+
+/* IMPORT */
+.import-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;}
+.import-textarea{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:12px;border-radius:8px;resize:vertical;outline:none;line-height:1.5;}
+.import-textarea:focus{border-color:var(--accent);}
+
+/* OWNER BADGES */
+.obadge{font-size:9px;font-weight:700;padding:2px 8px;border-radius:3px;letter-spacing:1px;}
+.obadge.malli{background:rgba(0,212,255,.12);color:#00d4ff;border:1px solid rgba(0,212,255,.3);}
+.obadge.ahmed{background:rgba(176,106,255,.12);color:#b06aff;border:1px solid rgba(176,106,255,.3);}
+.obadge.najma{background:rgba(255,107,53,.12);color:#ff6b35;border:1px solid rgba(255,107,53,.3);}
+.stag{font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;letter-spacing:1px;}
+.stag.fuel{background:rgba(0,255,157,.12);color:var(--green);border:1px solid rgba(0,255,157,.3);}
+.stag.hold{background:rgba(255,107,53,.12);color:var(--orange);border:1px solid rgba(255,107,53,.3);}
+.stag.deep{background:rgba(255,51,85,.12);color:var(--red);border:1px solid rgba(255,51,85,.3);}
+.stag.watch{background:rgba(255,215,0,.1);color:var(--yellow);border:1px solid rgba(255,215,0,.3);}
+.stag.g2{background:rgba(0,212,255,.15);color:#00d4ff;border:1px solid rgba(0,212,255,.5);animation:blink 1.5s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.4;}}
+.owner-section{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;}
+.transfer-tag{font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;}
+.transfer-tag.internal{background:rgba(255,215,0,.1);color:var(--yellow);border:1px solid rgba(255,215,0,.25);}
+.transfer-tag.received{background:rgba(0,255,157,.1);color:var(--green);border:1px solid rgba(0,255,157,.25);}
+.sell-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:14px;}
+
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="logo">Portfolio <span>Recovery</span></div>
+  <div class="hdr-right">
+    <span class="last-refresh" id="lastRefresh">Prices not loaded</span>
+    <button class="refresh-btn" onclick="refreshPrices()">↺ Refresh Prices</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="showTab('holdings',this)">Holdings</button>
+  <button class="tab" onclick="showTab('rotation',this)">Rotation Simulator</button>
+  <button class="tab" onclick="showTab('strategy',this)">Recovery Strategy</button>
+  <button class="tab" onclick="showTab('import',this)">Import CSV</button>
+  <button class="tab" onclick="showTab('owners',this)">👤 Owners</button>
+  <button class="tab" onclick="showTab('priority',this)">🎯 Priority</button>
+  <button class="tab" onclick="showTab('transfers',this)">↔ Transfers</button>
+</div>
+
+<!-- ═══ HOLDINGS ═══ -->
+<div class="page active" id="tab-holdings">
+
+  <!-- SUMMARY -->
+  <div class="summary" style="margin-top:20px;">
+    <div class="scard">
+      <div class="scard-label">Total Invested</div>
+      <div class="scard-value a" id="sumInvested">$0</div>
+    </div>
+    <div class="scard">
+      <div class="scard-label">Current Value</div>
+      <div class="scard-value" id="sumValue">$0</div>
+    </div>
+    <div class="scard">
+      <div class="scard-label">Unrealized P&L</div>
+      <div class="scard-value" id="sumPL">$0</div>
+    </div>
+    <div class="scard">
+      <div class="scard-label">Overall Return</div>
+      <div class="scard-value" id="sumReturn">0%</div>
+      <div class="recovery-bar-wrap"><div class="recovery-bar" id="sumBar" style="width:50%"></div></div>
+    </div>
+    <div class="scard">
+      <div class="scard-label">Need to Break Even</div>
+      <div class="scard-value y" id="sumBreakeven">0%</div>
+      <div class="scard-sub">portfolio needs to gain</div>
+    </div>
+    <div class="scard">
+      <div class="scard-label">Positions</div>
+      <div class="scard-value a" id="sumPositions">0</div>
+      <div class="scard-sub" id="sumPosBreak">0 up / 0 down</div>
+    </div>
+  </div>
+
+  <!-- ADD POSITION -->
+  <div class="sec">Add Position</div>
+  <div class="add-card">
+    <div class="form-grid">
+      <div class="ig">
+        <label class="il">Coin Symbol</label>
+        <input class="if" id="aSymbol" type="text" placeholder="e.g. APT" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+      </div>
+      <div class="ig">
+        <label class="il">Full Name</label>
+        <input class="if" id="aName" type="text" placeholder="e.g. Aptos">
+      </div>
+      <div class="ig">
+        <label class="il">Amount (coins)</label>
+        <input class="if" id="aAmount" type="number" step="0.000001" placeholder="1000">
+      </div>
+      <div class="ig">
+        <label class="il">Avg Entry Price ($)</label>
+        <input class="if" id="aEntry" type="number" step="0.000001" placeholder="8.50">
+      </div>
+      <div class="ig">
+        <label class="il">Current Price ($)</label>
+        <input class="if" id="aCurrent" type="number" step="0.000001" placeholder="2.10" oninput="calcPreview()">
+      </div>
+      <div class="ig">
+        <label class="il">Exchange</label>
+        <select class="isel" id="aExchange">
+          <option>Binance</option>
+          <option>Bybit</option>
+          <option>KuCoin</option>
+          <option>Coinbase</option>
+          <option>Other</option>
+        </select>
+      </div>
+    </div>
+    <!-- PREVIEW -->
+    <div id="addPreview" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;display:none;font-size:12px;">
+      <div style="display:flex;gap:20px;flex-wrap:wrap;">
+        <div>Invested: <strong id="prevInvested" style="color:var(--accent)">—</strong></div>
+        <div>Current: <strong id="prevCurrent" style="color:var(--text)">—</strong></div>
+        <div>P&L: <strong id="prevPL">—</strong></div>
+        <div>Return: <strong id="prevReturn">—</strong></div>
+        <div>Break even at: <strong id="prevBreakeven" style="color:var(--yellow)">—</strong></div>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="addPosition()">+ Add Position</button>
+  </div>
+
+  <!-- TABLE -->
+  <div class="sec">Your Holdings</div>
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Coin</th>
+          <th>Amount</th>
+          <th>Avg Entry</th>
+          <th>Current</th>
+          <th>Invested $</th>
+          <th>Value $</th>
+          <th>P&L $</th>
+          <th>Return %</th>
+          <th>Break Even</th>
+          <th>Need +%</th>
+          <th>Exchange</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="holdingsBody"></tbody>
+    </table>
+  </div>
+
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    <button class="btn btn-ghost" onclick="exportCSV()" style="font-size:10px;padding:7px 14px;">↓ Export CSV</button>
+    <button class="btn btn-ghost" onclick="clearAll()" style="font-size:10px;padding:7px 14px;color:var(--red);">Clear All</button>
+  </div>
+</div>
+
+<!-- ═══ ROTATION SIMULATOR ═══ -->
+<div class="page" id="tab-rotation">
+  <div class="sec" style="margin-top:20px;">Rotation Simulator — What if I rotate between coins?</div>
+
+  <div style="background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.2);border-radius:10px;padding:14px;margin-bottom:20px;font-size:12px;color:#8ab0c0;line-height:1.7;">
+    💡 <strong style="color:var(--accent)">How rotation works:</strong> You sell coin A (which is moving), take the profit, and buy more of coin B (which is lagging but you believe in). You end up with more units of coin B. When coin B eventually recovers, your recovery is larger than if you just held.
+  </div>
+
+  <div class="sim-card">
+    <div class="sim-grid">
+
+      <!-- SELL SIDE -->
+      <div class="sim-side">
+        <div class="sim-title">🔴 SELL — Coin Moving Now</div>
+        <div class="ig" style="margin-bottom:10px;">
+          <label class="il">Coin to Sell</label>
+          <select class="isel" id="simSellCoin" onchange="calcRotation()">
+            <option value="">— Select from holdings —</option>
+          </select>
+        </div>
+        <div class="ig" style="margin-bottom:10px;">
+          <label class="il">% of Position to Sell</label>
+          <input class="if" id="simSellPct" type="number" value="50" min="1" max="100" oninput="calcRotation()">
+        </div>
+        <div class="ig" style="margin-bottom:10px;">
+          <label class="il">Sell At Price ($)</label>
+          <input class="if" id="simSellPrice" type="number" step="0.000001" oninput="calcRotation()">
+        </div>
+        <div id="simSellInfo" style="font-size:11px;color:var(--dim);margin-top:8px;line-height:1.8;"></div>
+      </div>
+
+      <!-- BUY SIDE -->
+      <div class="sim-side">
+        <div class="sim-title">💚 BUY — Coin to Accumulate</div>
+        <div class="ig" style="margin-bottom:10px;">
+          <label class="il">Coin to Buy</label>
+          <select class="isel" id="simBuyCoin" onchange="calcRotation()">
+            <option value="">— Select from holdings —</option>
+          </select>
+        </div>
+        <div class="ig" style="margin-bottom:10px;">
+          <label class="il">Buy At Price ($)</label>
+          <input class="if" id="simBuyPrice" type="number" step="0.000001" oninput="calcRotation()">
+        </div>
+        <div class="ig" style="margin-bottom:10px;">
+          <label class="il">Target Recovery Price ($)</label>
+          <input class="if" id="simTargetPrice" type="number" step="0.000001" placeholder="Your break even or target" oninput="calcRotation()">
+        </div>
+        <div id="simBuyInfo" style="font-size:11px;color:var(--dim);margin-top:8px;line-height:1.8;"></div>
+      </div>
+    </div>
+
+    <!-- RESULT -->
+    <div class="sim-result" id="simResult" style="display:none;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--green);margin-bottom:12px;">Rotation Analysis</div>
+      <div class="sim-result-row"><span>USD from selling</span><span id="rUSD" style="color:var(--accent)">—</span></div>
+      <div class="sim-result-row"><span>Extra coins acquired</span><span id="rExtraCoins" style="color:var(--green)">—</span></div>
+      <div class="sim-result-row"><span>Total coins after rotation</span><span id="rTotalCoins" style="color:var(--green)">—</span></div>
+      <div class="sim-result-row"><span>Value if target reached (before)</span><span id="rValueBefore">—</span></div>
+      <div class="sim-result-row"><span>Value if target reached (after rotation)</span><span id="rValueAfter" style="color:var(--green)">—</span></div>
+      <div class="sim-result-row"><span>Extra gain from rotation</span><span id="rExtraGain" style="color:var(--yellow)">—</span></div>
+      <div class="sim-result-row"><span>Verdict</span><span id="rVerdict">—</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ STRATEGY ═══ -->
+<div class="page" id="tab-strategy">
+  <div class="sec" style="margin-top:20px;">Recovery Strategy — Honest Assessment</div>
+
+  <!-- SITUATION ASSESSMENT -->
+  <div class="strategy-box" id="situationBox">
+    <div class="strategy-title" style="color:var(--yellow)">📊 Your Situation</div>
+    <div id="situationText" style="font-size:12px;color:#8ab0c0;line-height:1.8;">Add your holdings to see a personalized assessment.</div>
+  </div>
+
+  <!-- THE TWO OPTIONS -->
+  <div class="strategy-box">
+    <div class="strategy-title">Option 1 — Hold and Wait</div>
+    <div class="strategy-item">
+      <span class="strategy-icon">✅</span>
+      <div class="strategy-text"><strong>Works if:</strong> You hold fundamentally strong projects that will recover. No stress, no action needed. Just patience.</div>
+    </div>
+    <div class="strategy-item">
+      <span class="strategy-icon">⚠️</span>
+      <div class="strategy-text"><strong>Risk:</strong> Some projects never recover. If you are holding weak projects, holding is just a slow loss. The market recovering does not mean every coin recovers.</div>
+    </div>
+    <div class="strategy-item">
+      <span class="strategy-icon">📏</span>
+      <div class="strategy-text"><strong>Rule:</strong> Only hold projects where you understand the fundamentals and believe in the team and use case. If you cannot explain why you own it — consider exiting.</div>
+    </div>
+  </div>
+
+  <div class="strategy-box">
+    <div class="strategy-title">Option 2 — Active Rotation</div>
+    <div class="strategy-item">
+      <span class="strategy-icon">✅</span>
+      <div class="strategy-text"><strong>Works if:</strong> The market is recovering. You rotate into strength and back into your core holding. You accumulate more coins with the same capital.</div>
+    </div>
+    <div class="strategy-item">
+      <span class="strategy-icon">⚠️</span>
+      <div class="strategy-text"><strong>Risk:</strong> Rotation done emotionally or randomly makes things worse. You sell your best coin right before it moves. You buy the wrong one at the top.</div>
+    </div>
+    <div class="strategy-item">
+      <span class="strategy-icon">📏</span>
+      <div class="strategy-text"><strong>Rules for safe rotation:</strong> Never sell more than 30% of any position. Only rotate into coins that are showing volume and momentum on the scanner. Always have a buy-back plan before you sell.</div>
+    </div>
+  </div>
+
+  <!-- ROTATION RULES -->
+  <div class="strategy-box" style="border-left:4px solid var(--green);">
+    <div class="strategy-title" style="color:var(--green);">✅ The Rotation Rules</div>
+    <div class="strategy-item">
+      <span class="strategy-icon">1️⃣</span>
+      <div class="strategy-text"><strong>Scanner first</strong> — only rotate into a coin that is showing volume signal on your scanner. Not hope. Not feeling. Volume.</div>
+    </div>
+    <div class="strategy-item">
+      <span class="strategy-icon">2️⃣</span>
+      <div class="strategy-text"><strong>Never sell your full position</strong> — maximum 30% of any holding. You keep 70% of your base. If the rotation goes wrong you still own most of your coins.</div>
+    </div>
+    <div class="strategy-item">
+      <span class="strategy-icon">3️⃣</span>
+      <div class="strategy-text"><strong>Know your re-entry before you sell</strong> — decide the exact price you will buy back before you click sell. Write it down. Stick to it.</div>
+    </div>
+    <div class="strategy-item">
+      <span class="strategy-icon">4️⃣</span>
+      <div class="strategy-text"><strong>Goal is more coins, not more dollars</strong> — you are not trying to get rich in one trade. You are trying to own more coins so when the recovery comes, you recover more.</div>
+    </div>
+    <div class="strategy-item">
+      <span class="strategy-icon">5️⃣</span>
+      <div class="strategy-text"><strong>BTC and market direction first</strong> — if BTC is falling, do not rotate into anything. Wait. Rotating into a falling market accelerates your losses.</div>
+    </div>
+  </div>
+
+  <!-- THE HONEST TRUTH -->
+  <div class="strategy-box" style="border-left:4px solid var(--red);">
+    <div class="strategy-title" style="color:var(--red);">⚠️ The Honest Truth</div>
+    <div class="strategy-item">
+      <span class="strategy-icon">💭</span>
+      <div class="strategy-text"><strong>Most people in this situation make it worse</strong> — not better. They trade emotionally trying to recover losses. They take bigger risks. They end up with $500 instead of $2,000.</div>
+    </div>
+    <div class="strategy-item">
+      <span class="strategy-icon">🧘</span>
+      <div class="strategy-text"><strong>The $2,000 you have is real capital</strong> — protect it first. Growing it from $2,000 back to $10,000 requires 5x. That is achievable with patience and the right strategy. Losing the $2,000 means starting over.</div>
+    </div>
+    <div class="strategy-item">
+      <span class="strategy-icon">📈</span>
+      <div class="strategy-text"><strong>The market has already done most of the damage</strong> — markets that fall 75% historically recover. The question is not if but when and which coins survive. Focus on quality holdings.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ IMPORT ═══ -->
+<div class="page" id="tab-import">
+  <div class="sec" style="margin-top:20px;">Import from Exchange CSV</div>
+
+  <div style="background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.2);border-radius:10px;padding:16px;margin-bottom:20px;font-size:12px;color:#8ab0c0;line-height:1.8;">
+    <strong style="color:var(--accent)">How to export from each exchange:</strong><br>
+    <strong style="color:var(--text)">Binance:</strong> Account → Orders → Trade History → Export → Download CSV<br>
+    <strong style="color:var(--text)">Bybit:</strong> Assets → My Assets → Transaction History → Export<br>
+    <strong style="color:var(--text)">KuCoin:</strong> Assets → Spot Account → Trade History → Export<br><br>
+    Once you have the CSV, you can either paste the data below or manually add positions in the Holdings tab using your average entry prices.
+  </div>
+
+  <div class="import-box">
+    <div class="sec">Manual Bulk Entry — Paste your positions</div>
+    <div style="font-size:11px;color:var(--dim);margin-bottom:10px;">Format: SYMBOL, AMOUNT, AVG_ENTRY_PRICE, CURRENT_PRICE, EXCHANGE (one per line)</div>
+    <div style="font-size:11px;color:var(--dim);margin-bottom:12px;">Example:<br>APT, 500, 8.50, 2.10, Binance<br>XLM, 10000, 0.42, 0.11, Bybit<br>SOL, 25, 120, 45, KuCoin</div>
+    <textarea class="import-textarea" id="importArea" rows="10" placeholder="APT, 500, 8.50, 2.10, Binance&#10;XLM, 10000, 0.42, 0.11, Bybit&#10;SOL, 25, 120, 45, KuCoin"></textarea>
+    <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="importBulk()">Import All</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('importArea').value=''">Clear</button>
+    </div>
+    <div id="importResult" style="margin-top:10px;font-size:12px;"></div>
+  </div>
+</div>
+
+<!-- ═══ OWNERS ═══ -->
+<div class="page" id="tab-owners">
+  <div class="sec" style="margin-top:20px;">Ownership Breakdown — Malli · Ahmed · Najma</div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-bottom:20px;" id="ownerSummaryCards"></div>
+
+  <div id="ownerDetailBlocks"></div>
+</div>
+
+<!-- ═══ PRIORITY ═══ -->
+<div class="page" id="tab-priority">
+  <div class="sec" style="margin-top:20px;">🎯 Sell Candidates — G2 (JTO) Watch</div>
+
+  <div style="background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.2);border-radius:10px;padding:14px;margin-bottom:20px;font-size:12px;color:#8ab0c0;line-height:1.7;">
+    ⚠️ <strong style="color:#00d4ff;">Rule:</strong> No selling before cost basis verified, ownership verified, transfers matched. This list is planning only.<br>
+    <strong style="color:var(--yellow)">🎯 G2 = JTO — Monitor specifically for sale in coming days based on price movement.</strong>
+  </div>
+
+  <div id="sellCandidatesList"></div>
+
+  <div class="sec" style="margin-top:24px;">All Positions — Ranked Least to Most Damaged</div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th>Rank</th><th>Owner</th><th>Coin</th><th>Location</th><th>Value $</th><th>Entry $</th><th>Now $</th><th>P&L %</th><th>Need +%</th><th>Status</th>
+      </tr></thead>
+      <tbody id="priorityBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ TRANSFERS ═══ -->
+<div class="page" id="tab-transfers">
+  <div class="sec" style="margin-top:20px;">Internal Transfer Log — Crypto.com → Exchanges</div>
+  <div style="background:rgba(255,215,0,.04);border:1px solid rgba(255,215,0,.2);border-radius:10px;padding:14px;margin-bottom:16px;font-size:12px;color:#8ab0c0;line-height:1.7;">
+    These are internal movements between your own accounts. They are <strong style="color:var(--yellow)">NOT taxable events</strong> and should NOT be counted as new purchases or sales. Total USDC/USDT sent from Crypto.com to exchanges: <strong style="color:#00d4ff">$33,255</strong>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th>Date</th><th>Asset</th><th>Amount</th><th>USD Value</th><th>From</th><th>To</th><th>Owner</th><th>Type</th><th>Note</th>
+      </tr></thead>
+      <tbody id="transfersBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+//  VERIFIED PORTFOLIO DATA
+//  Reconstructed from all screenshots + CSV files
+//  June 2026
+// ══════════════════════════════════════
+const VERIFIED_POSITIONS = [
+  // MALLI
+  {owner:'malli', coin:'APT',   qty:321.39,   avgEntry:7.83,  price:0.92,  loc:'APT Wallet',         status:'deep', note:'Personal wallet'},
+  {owner:'malli', coin:'APT',   qty:108.16,   avgEntry:7.83,  price:0.92,  loc:'Binance Daytrading', status:'deep'},
+  {owner:'malli', coin:'APT',   qty:1017.71,  avgEntry:0,     price:0.92,  loc:'Crypto.com',         status:'hold', note:'Received from Abdulrahman — zero cost basis'},
+  {owner:'malli', coin:'JTO',   qty:1663,     avgEntry:3.20,  price:0.512, loc:'Solana Wallet',      status:'g2',   note:'G2 — MONITOR FOR SALE'},
+  {owner:'malli', coin:'FET',   qty:1386.3,   avgEntry:0.55,  price:0.28,  loc:'Binance Daytrading', status:'hold'},
+  {owner:'malli', coin:'HONEY', qty:100000,   avgEntry:0.003, price:0.0018,loc:'Solana Wallet',      status:'watch'},
+  {owner:'malli', coin:'SPELL', qty:1381330,  avgEntry:0.0008,price:0.00015,loc:'Binance Daytrading',status:'hold'},
+  {owner:'malli', coin:'OSMO',  qty:5684.4,   avgEntry:0.175, price:0.0496,loc:'Osmosis',            status:'hold'},
+  {owner:'malli', coin:'CRO',   qty:4276.57,  avgEntry:0.11,  price:0.068, loc:'Crypto.com',         status:'hold'},
+  {owner:'malli', coin:'PEAQ',  qty:6040.9,   avgEntry:0.065, price:0.0305,loc:'Crypto.com',         status:'hold'},
+  {owner:'malli', coin:'NOT',   qty:365652.3, avgEntry:0.004, price:0.00045,loc:'Binance Malli',     status:'fuel'},
+  {owner:'malli', coin:'PYTH',  qty:1850.7,   avgEntry:0.21,  price:0.0405,loc:'Binance Daytrading', status:'hold'},
+  {owner:'malli', coin:'FIL',   qty:79.11,    avgEntry:2.66,  price:2.01,  loc:'Crypto.com',         status:'hold'},
+  {owner:'malli', coin:'ARB',   qty:183.43,   avgEntry:0.147, price:0.101, loc:'Binance Malli',      status:'fuel'},
+  {owner:'malli', coin:'BNB',   qty:0.059,    avgEntry:420,   price:710,   loc:'Binance Daytrading', status:'fuel'},
+  {owner:'malli', coin:'SOL',   qty:0.99,     avgEntry:120,   price:81.7,  loc:'Solana Wallet',      status:'hold'},
+  {owner:'malli', coin:'TON',   qty:3.34,     avgEntry:6.63,  price:1.87,  loc:'TON Wallet',         status:'hold'},
+  // AHMED
+  {owner:'ahmed', coin:'APT',   qty:41.31,    avgEntry:12.32, price:0.92,  loc:'Bybit',              status:'deep'},
+  {owner:'ahmed', coin:'PYTH',  qty:3431.61,  avgEntry:0.21,  price:0.0405,loc:'Bybit',              status:'deep'},
+  {owner:'ahmed', coin:'POPCAT',qty:1618.19,  avgEntry:0.63,  price:0.051, loc:'Bybit',              status:'deep'},
+  {owner:'ahmed', coin:'AVA',   qty:360.33,   avgEntry:1.62,  price:0.22,  loc:'KuCoin',             status:'deep'},
+  {owner:'ahmed', coin:'TRVL',  qty:149287,   avgEntry:0.0101,price:0.00102,loc:'KuCoin',            status:'deep'},
+  {owner:'ahmed', coin:'UOS',   qty:9000,     avgEntry:0.057, price:0.0057,loc:'KuCoin',             status:'deep'},
+  {owner:'ahmed', coin:'ETH',   qty:0.01018,  avgEntry:2005,  price:2000,  loc:'KuCoin',             status:'hold'},
+  {owner:'ahmed', coin:'ARB',   qty:2336.8,   avgEntry:0.147, price:0.101, loc:'Binance Retro',      status:'fuel'},
+  {owner:'ahmed', coin:'ZRO',   qty:254.58,   avgEntry:3.10,  price:1.126, loc:'Binance Retro',      status:'hold'},
+  {owner:'ahmed', coin:'OP',    qty:1309.18,  avgEntry:0.689, price:0.1155,loc:'Binance Retro',      status:'deep'},
+  {owner:'ahmed', coin:'ZK',    qty:9672.88,  avgEntry:0.18,  price:0.0141,loc:'Binance Retro',      status:'deep'},
+  // NAJMA
+  {owner:'najma', coin:'DIMO',  qty:30778.56, avgEntry:0.085, price:0.0101,loc:'Xaawo.Taako',        status:'deep'},
+  {owner:'najma', coin:'HONEY', qty:189804,   avgEntry:0.003, price:0.0018,loc:'Backpack+Xaawo',     status:'watch'},
+  {owner:'najma', coin:'FET',   qty:1189.21,  avgEntry:0.55,  price:0.28,  loc:'Binance Araweelo',   status:'hold'},
+  {owner:'najma', coin:'ETH',   qty:0.01138,  avgEntry:2005,  price:2000,  loc:'DEX Wallets',        status:'hold'},
+  {owner:'najma', coin:'TRVL',  qty:30774.46, avgEntry:0.0101,price:0.00102,loc:'DEX Wallet',        status:'deep'},
+];
+
+const TRANSFERS_DATA = [
+  {date:'2024-10-30',asset:'USDC',amount:3517.52,usd:3497,from:'Crypto.com',to:'Binance',owner:'malli',type:'internal'},
+  {date:'2024-11-08',asset:'USDC',amount:2092.41,usd:2081,from:'Crypto.com',to:'Binance',owner:'malli',type:'internal'},
+  {date:'2024-11-16',asset:'USDT',amount:165.66, usd:163, from:'Crypto.com',to:'Binance',owner:'malli',type:'internal'},
+  {date:'2024-11-29',asset:'USDT',amount:5000,   usd:4923,from:'Crypto.com',to:'Binance/Bybit',owner:'malli',type:'internal'},
+  {date:'2025-01-08',asset:'USDC',amount:2006.55,usd:1995,from:'Crypto.com',to:'Binance',owner:'malli',type:'internal'},
+  {date:'2025-03-05',asset:'USDC',amount:3498.94,usd:3479,from:'Crypto.com',to:'Binance',owner:'malli',type:'internal'},
+  {date:'2025-04-03',asset:'USDC',amount:3143.27,usd:3126,from:'Crypto.com',to:'Binance',owner:'malli',type:'internal'},
+  {date:'2025-04-06',asset:'USDC',amount:1840.69,usd:1831,from:'Crypto.com',to:'Binance',owner:'malli',type:'internal'},
+  {date:'2025-07-31',asset:'USDC',amount:2026.85,usd:2015,from:'Crypto.com',to:'Binance',owner:'malli',type:'internal'},
+  {date:'2025-08-02',asset:'USDC',amount:2069.31,usd:2057,from:'Crypto.com',to:'Binance',owner:'malli',type:'internal'},
+  {date:'2025-08-04',asset:'USDC',amount:2002.58,usd:1991,from:'Crypto.com',to:'Binance',owner:'malli',type:'internal'},
+  {date:'2025-08-06',asset:'USDC',amount:3119.51,usd:3101,from:'Crypto.com',to:'Binance',owner:'malli',type:'internal'},
+  {date:'2025-08-14',asset:'USDC',amount:2009.55,usd:1998,from:'Crypto.com',to:'Binance',owner:'malli',type:'internal'},
+  {date:'2025-08-17',asset:'OSMO', amount:5684.53,usd:995,from:'Crypto.com',to:'Osmosis',owner:'malli',type:'internal'},
+  {date:'2025-12-11',asset:'APT',  amount:1017.71,usd:1713,from:'Abdulrahman H. Hirsi',to:'Crypto.com',owner:'malli',type:'received',note:'P2P gift — zero cost basis'},
+];
+
+// ══════════════════════════════════════
+//  RENDER OWNERS TAB
+// ══════════════════════════════════════
+function renderOwnersTab() {
+  const ownerColor = {malli:'#00d4ff', ahmed:'#b06aff', najma:'#ff6b35'};
+  const ownerAccounts = {
+    malli:'Binance(MALLI+Daytrading) · Crypto.com · APT Wallet · TON Wallet · Osmosis · Solana',
+    ahmed:'Bybit · KuCoin · Binance Retro (rajjo)',
+    najma:'Binance(Araweelo+Najma) · Crypto.com Najma · Phantom(Xaawo.Taako+Backpack)'
+  };
+
+  const fmtV = (n) => {
+    const a = Math.abs(n);
+    if(a >= 1000) return (n<0?'-$':'$') + a.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:0});
+    return (n<0?'-$':'$') + a.toFixed(2);
+  };
+
+  let summaryHTML = '';
+  let detailHTML  = '';
+
+  ['malli','ahmed','najma'].forEach(owner => {
+    const rows = VERIFIED_POSITIONS.filter(p => p.owner === owner);
+    const totalVal  = rows.reduce((s,p) => s + p.qty * p.price, 0);
+    const totalCost = rows.filter(p=>p.avgEntry>0).reduce((s,p) => s + p.qty * p.avgEntry, 0);
+    const color = ownerColor[owner];
+
+    summaryHTML += `
+      <div style="background:var(--card);border:1px solid var(--border);border-top:3px solid ${color};border-radius:10px;padding:16px;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;color:${color};margin-bottom:6px;">${owner.toUpperCase()}</div>
+        <div style="font-size:11px;color:var(--dim);margin-bottom:12px;">${ownerAccounts[owner]}</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;color:${color}">${fmtV(totalVal)}</div>
+        <div style="font-size:11px;color:var(--dim);margin-top:4px">${rows.length} positions · Cost basis: ${fmtV(totalCost)}</div>
+      </div>`;
+
+    const sortedRows = [...rows].filter(p => p.qty * p.price >= 10).sort((a,b) => (b.qty*b.price) - (a.qty*a.price));
+
+    detailHTML += `
+      <div class="owner-section" style="border-top:3px solid ${color};">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:${color};margin-bottom:14px;">${owner.toUpperCase()} — All Positions</div>
+        <div style="overflow-x:auto"><table style="min-width:600px">
+          <thead><tr>
+            <th>Coin</th><th>Location</th><th>Qty</th><th>Avg Entry</th><th>Price Now</th><th>Value</th><th>P&L $</th><th>P&L %</th><th>Break Even</th><th>Status</th>
+          </tr></thead>
+          <tbody>${sortedRows.map(p => {
+            const val  = p.qty * p.price;
+            const cost = p.avgEntry > 0 ? p.qty * p.avgEntry : 0;
+            const pnl  = p.avgEntry > 0 ? val - cost : val;
+            const pct  = cost > 0 ? ((val-cost)/cost*100) : 0;
+            const need = p.avgEntry > 0 && p.price > 0 ? ((p.avgEntry/p.price)-1)*100 : 0;
+            const pColor = pnl >= 0 ? 'var(--green)' : pnl > -cost*0.5 ? 'var(--yellow)' : 'var(--red)';
+            const statusMap = {fuel:'🟡 FUEL',hold:'🟠 HOLD',deep:'🔴 DEEP',watch:'⚠️ WATCH',g2:'🎯 G2'};
+            const fmtQty = n => n >= 1000000 ? (n/1000000).toFixed(2)+'M' : n >= 1000 ? (n/1000).toFixed(1)+'K' : n.toFixed(n<10?4:2);
+            const fmtP2 = (n,d=4) => n < 0.01 ? n.toFixed(8) : n < 1 ? n.toFixed(d) : n.toFixed(2);
+            return `<tr>
+              <td><strong style="font-family:'Barlow Condensed',sans-serif;font-size:16px;color:${color}">${p.coin}</strong>${p.note?`<div style="font-size:9px;color:var(--dim)">${p.note}</div>`:''}</td>
+              <td style="font-size:11px;color:var(--dim)">${p.loc}</td>
+              <td>${fmtQty(p.qty)}</td>
+              <td style="color:var(--dim)">${p.avgEntry > 0 ? '$'+fmtP2(p.avgEntry) : '—'}</td>
+              <td>$${fmtP2(p.price)}</td>
+              <td style="color:var(--accent)">$${val.toFixed(2)}</td>
+              <td style="color:${pColor};font-weight:700">${p.avgEntry>0?(pnl>=0?'+':'')+pnl.toFixed(2):'—'}</td>
+              <td style="color:${pColor}">${p.avgEntry>0?(pct>=0?'+':'')+pct.toFixed(1)+'%':'—'}</td>
+              <td style="color:var(--yellow)">${need > 0 ? '+'+need.toFixed(0)+'%' : need < 0 ? '✓ In profit' : '—'}</td>
+              <td><span class="stag ${p.status}">${statusMap[p.status]||p.status}</span></td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table></div>
+      </div>`;
+  });
+
+  document.getElementById('ownerSummaryCards').innerHTML  = summaryHTML;
+  document.getElementById('ownerDetailBlocks').innerHTML  = detailHTML;
+}
+
+// ══════════════════════════════════════
+//  RENDER PRIORITY TAB
+// ══════════════════════════════════════
+function renderPriorityTab() {
+  const candidates = [
+    {coin:'JTO',  owner:'malli', urgent:true,  value:851,  pnlPct:-84, reason:'🎯 G2 — WATCH NOW. Jito/Solana, $851 value. -84% from $3.20 entry. Best exit opportunity if market moves up this week.'},
+    {coin:'ARB',  owner:'ahmed', urgent:false, value:236,  pnlPct:188, reason:'In Binance Retro (Ahmed). $236 value. IN PROFIT +188%. Take profits and use as fuel.'},
+    {coin:'ARB',  owner:'malli', urgent:false, value:19,   pnlPct:-31, reason:'Binance Malli. $19. Small position, release capital.'},
+    {coin:'ZRO',  owner:'ahmed', urgent:false, value:287,  pnlPct:-64, reason:'LayerZero (Ahmed). $287 value. Down -64% from entry. Use as fuel for active trading.'},
+    {coin:'OP',   owner:'ahmed', urgent:false, value:151,  pnlPct:-83, reason:'Optimism (Ahmed). $151 value. Down -83% from $0.689 entry. Limited recovery potential near term.'},
+    {coin:'ZK',   owner:'ahmed', urgent:false, value:137,  pnlPct:-92, reason:'ZKSync (Ahmed). $137 value. Down -92% from entry. Very little near-term recovery.'},
+    {coin:'NOT',  owner:'malli', urgent:false, value:165,  pnlPct:-11, reason:'Notcoin (Malli). $165 value. Only -11% from cost. Smallest loss — best fuel candidate.'},
+  ];
+
+  document.getElementById('sellCandidatesList').innerHTML = candidates.map((c,i) => `
+    <div class="sell-card" style="border-left:3px solid ${c.urgent?'#00d4ff':'var(--border)'}">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;width:28px;color:${i<3?'var(--green)':'var(--dim)'}">${i+1}</div>
+      <div style="font-size:20px">${c.urgent?'🎯':'💰'}</div>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:${c.urgent?'#00d4ff':'var(--text)'}">${c.coin}</span>
+          <span class="obadge ${c.owner}">${c.owner.toUpperCase()}</span>
+          ${c.urgent?'<span class="stag g2">G2 WATCH</span>':''}
+        </div>
+        <div style="font-size:12px;color:#8ab0c0">${c.reason}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--green)">$${c.value}</div>
+        <div style="font-size:11px;color:${c.pnlPct>=0?'var(--green)':'var(--red)'}">${c.pnlPct>=0?'+':''}${c.pnlPct}%</div>
+      </div>
+    </div>`).join('');
+
+  const all = VERIFIED_POSITIONS
+    .filter(p => p.qty * p.price >= 10 && p.avgEntry > 0)
+    .map(p => {
+      const val = p.qty * p.price;
+      const cost = p.qty * p.avgEntry;
+      const pct  = ((val - cost) / cost) * 100;
+      const need = p.price > 0 ? ((p.avgEntry / p.price) - 1) * 100 : 0;
+      return {...p, val, cost, pct, need};
+    })
+    .sort((a, b) => b.pct - a.pct);
+
+  const ownerColor = {malli:'#00d4ff', ahmed:'#b06aff', najma:'#ff6b35'};
+  const statusMap  = {fuel:'🟡 FUEL',hold:'🟠 HOLD',deep:'🔴 DEEP',watch:'⚠️ WATCH',g2:'🎯 G2'};
+
+  document.getElementById('priorityBody').innerHTML = all.map((p, i) => {
+    const color  = p.pct >= 0 ? 'var(--green)' : p.pct > -30 ? 'var(--yellow)' : p.pct > -70 ? 'var(--orange)' : 'var(--red)';
+    const assess = p.pct >= 0 ? '✅ In profit' : p.pct > -20 ? '🟡 Near breakeven' : p.pct > -50 ? '🟠 Significant' : p.pct > -80 ? '🔴 Deep loss' : '💀 Critical';
+    const fmtP2  = n => n < 0.01 ? n.toFixed(6) : n < 1 ? n.toFixed(4) : n.toFixed(2);
+    return `<tr>
+      <td style="color:var(--dim);font-family:'Barlow Condensed',sans-serif;font-size:16px">${i+1}</td>
+      <td><span class="obadge ${p.owner}">${p.owner.toUpperCase()}</span></td>
+      <td><strong style="font-family:'Barlow Condensed',sans-serif;font-size:15px;color:${ownerColor[p.owner]}">${p.coin}</strong></td>
+      <td style="font-size:11px;color:var(--dim)">${p.loc}</td>
+      <td style="color:var(--accent)">$${p.val.toFixed(0)}</td>
+      <td style="color:var(--dim)">$${fmtP2(p.avgEntry)}</td>
+      <td>$${fmtP2(p.price)}</td>
+      <td style="color:${color};font-weight:700">${(p.pct>=0?'+':'')+p.pct.toFixed(1)}%</td>
+      <td style="color:var(--yellow)">${p.need > 0 ? '+'+p.need.toFixed(0)+'%' : '✓'}</td>
+      <td style="font-size:11px;color:var(--dim)">${assess}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════
+//  RENDER TRANSFERS TAB
+// ══════════════════════════════════════
+function renderTransfersTab() {
+  document.getElementById('transfersBody').innerHTML = TRANSFERS_DATA.map(t => `
+    <tr>
+      <td style="color:var(--dim)">${t.date}</td>
+      <td><strong style="color:var(--accent)">${t.asset}</strong></td>
+      <td>${t.amount.toLocaleString('en',{maximumFractionDigits:2})}</td>
+      <td style="color:var(--green)">$${t.usd.toLocaleString()}</td>
+      <td style="font-size:11px;color:var(--dim)">${t.from}</td>
+      <td style="font-size:11px;color:var(--dim)">${t.to}</td>
+      <td><span class="obadge ${t.owner}">${t.owner.toUpperCase()}</span></td>
+      <td><span class="transfer-tag ${t.type}">${t.type.toUpperCase()}</span></td>
+      <td style="font-size:10px;color:var(--dim)">${t.note||'—'}</td>
+    </tr>`).join('');
+}
+
+let holdings = JSON.parse(localStorage.getItem('qv_portfolio')||'[]');
+
+function save(){ try{ localStorage.setItem('qv_portfolio', JSON.stringify(holdings)); }catch(e){} }
+
+// ══════════════════════════════════════
+//  TABS
+// ══════════════════════════════════════
+function showTab(id, el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  if(el) el.classList.add('active');
+  if(id==='holdings')  renderHoldings();
+  if(id==='rotation')  renderRotationSelects();
+  if(id==='strategy')  renderStrategy();
+  if(id==='owners')    renderOwnersTab();
+  if(id==='priority')  renderPriorityTab();
+  if(id==='transfers') renderTransfersTab();
+}
+
+// ══════════════════════════════════════
+//  FORMAT HELPERS
+// ══════════════════════════════════════
+function fmt$(n){ if(isNaN(n)) return '—'; const a=Math.abs(n); const s=n<0?'-$':'$'; return s+(a>=1000?a.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2}):a.toFixed(a>=1?2:a>=0.01?4:6)); }
+function fmtP(n){ if(isNaN(n)) return '—'; return (n>=0?'+':'')+n.toFixed(2)+'%'; }
+function fmtN(n, d=2){ if(isNaN(n)) return '—'; return n.toLocaleString('en',{minimumFractionDigits:d,maximumFractionDigits:d}); }
+
+// ══════════════════════════════════════
+//  CALC PREVIEW
+// ══════════════════════════════════════
+function calcPreview(){
+  const amount  = parseFloat(document.getElementById('aAmount').value)||0;
+  const entry   = parseFloat(document.getElementById('aEntry').value)||0;
+  const current = parseFloat(document.getElementById('aCurrent').value)||0;
+  if(!amount||!entry||!current){ document.getElementById('addPreview').style.display='none'; return; }
+  const invested = amount*entry;
+  const value    = amount*current;
+  const pl       = value-invested;
+  const ret      = ((current-entry)/entry)*100;
+  const breakeven= entry;
+  const needPct  = ((entry-current)/current)*100;
+  document.getElementById('addPreview').style.display='block';
+  document.getElementById('prevInvested').textContent  = fmt$(invested);
+  document.getElementById('prevCurrent').textContent   = fmt$(value);
+  const plEl = document.getElementById('prevPL');
+  plEl.textContent = fmt$(pl); plEl.style.color = pl>=0?'var(--green)':'var(--red)';
+  const retEl = document.getElementById('prevReturn');
+  retEl.textContent = fmtP(ret); retEl.style.color = ret>=0?'var(--green)':'var(--red)';
+  document.getElementById('prevBreakeven').textContent = fmt$(breakeven)+' (need +'+needPct.toFixed(1)+'%)';
+}
+
+// ══════════════════════════════════════
+//  ADD POSITION
+// ══════════════════════════════════════
+function addPosition(){
+  const symbol   = document.getElementById('aSymbol').value.trim().toUpperCase();
+  const name     = document.getElementById('aName').value.trim() || symbol;
+  const amount   = parseFloat(document.getElementById('aAmount').value)||0;
+  const entry    = parseFloat(document.getElementById('aEntry').value)||0;
+  const current  = parseFloat(document.getElementById('aCurrent').value)||entry;
+  const exchange = document.getElementById('aExchange').value;
+  if(!symbol||!amount||!entry){ alert('Fill in Symbol, Amount, and Entry Price.'); return; }
+  holdings.push({ id:Date.now(), symbol, name, amount, entry, current, exchange });
+  save();
+  renderHoldings();
+  ['aSymbol','aName','aAmount','aEntry','aCurrent'].forEach(id=>{ document.getElementById(id).value=''; });
+  document.getElementById('addPreview').style.display='none';
+}
+
+// ══════════════════════════════════════
+//  REFRESH PRICES FROM BINANCE
+// ══════════════════════════════════════
+async function refreshPrices(){
+  if(!holdings.length) return;
+  document.getElementById('lastRefresh').textContent = 'Refreshing...';
+  try {
+    const res  = await fetch('https://api.binance.com/api/v3/ticker/price');
+    const data = await res.json();
+    const priceMap = {};
+    data.forEach(t=>{ priceMap[t.symbol]=parseFloat(t.price); });
+    let updated = 0;
+    holdings.forEach(h=>{
+      const sym = h.symbol+'USDT';
+      if(priceMap[sym]){ h.current = priceMap[sym]; updated++; }
+    });
+    save();
+    renderHoldings();
+    document.getElementById('lastRefresh').textContent = 'Updated '+new Date().toTimeString().slice(0,8)+' ('+updated+' prices)';
+  } catch(e){
+    document.getElementById('lastRefresh').textContent = 'Price fetch failed';
+  }
+}
+
+// ══════════════════════════════════════
+//  RENDER HOLDINGS
+// ══════════════════════════════════════
+function renderHoldings(){
+  const h = holdings;
+  let totalInvested=0, totalValue=0;
+  h.forEach(p=>{ totalInvested+=p.amount*p.entry; totalValue+=p.amount*p.current; });
+  const totalPL  = totalValue-totalInvested;
+  const totalRet = totalInvested>0?((totalValue-totalInvested)/totalInvested)*100:0;
+  const breakevenNeed = totalValue>0?((totalInvested-totalValue)/totalValue)*100:0;
+  const pUp   = h.filter(p=>p.current>=p.entry).length;
+  const pDown = h.filter(p=>p.current<p.entry).length;
+
+  set('sumInvested', fmt$(totalInvested), totalInvested>0?'a':'dim');
+  set('sumValue',    fmt$(totalValue),    totalValue>=totalInvested?'g':'r');
+  set('sumPL',       fmt$(totalPL),       totalPL>=0?'g':'r');
+  set('sumReturn',   fmtP(totalRet),      totalRet>=0?'g':'r');
+  set('sumBreakeven','+'+breakevenNeed.toFixed(1)+'%', 'y');
+  set('sumPositions', h.length, 'a');
+  document.getElementById('sumPosBreak').textContent = pUp+'↑ / '+pDown+'↓';
+
+  // Recovery bar
+  const barPct = Math.min(Math.max((totalValue/Math.max(totalInvested,1))*100, 0), 100);
+  document.getElementById('sumBar').style.width = barPct+'%';
+  document.getElementById('sumBar').className = 'recovery-bar'+(barPct>=80?' good':'');
+
+  // Table
+  const tbody = document.getElementById('holdingsBody');
+  tbody.innerHTML = h.map(p=>{
+    const invested = p.amount*p.entry;
+    const value    = p.amount*p.current;
+    const pl       = value-invested;
+    const ret      = ((p.current-p.entry)/p.entry)*100;
+    const needPct  = p.current<p.entry?((p.entry-p.current)/p.current)*100:0;
+    const barW     = Math.min(Math.max((value/Math.max(invested,0.01))*100,0),100);
+    return `<tr>
+      <td><div class="coin-cell"><div><div class="coin-name">${p.symbol}</div><div class="coin-full">${p.name}</div></div></div></td>
+      <td>${fmtN(p.amount,4)}</td>
+      <td style="color:var(--dim)">${fmt$(p.entry)}</td>
+      <td style="color:${p.current>=p.entry?'var(--green)':'var(--red)'}">${fmt$(p.current)}</td>
+      <td style="color:var(--accent)">${fmt$(invested)}</td>
+      <td style="color:${value>=invested?'var(--green)':'var(--red)'}">${fmt$(value)}</td>
+      <td style="color:${pl>=0?'var(--green)':'var(--red)'};font-weight:700">${fmt$(pl)}</td>
+      <td>
+        <span style="color:${ret>=0?'var(--green)':'var(--red)'}">${fmtP(ret)}</span>
+        <div class="pnl-bar-wrap"><div class="pnl-bar" style="width:${barW}%;background:${ret>=0?'var(--green)':'var(--red)'}"></div></div>
+      </td>
+      <td style="color:var(--yellow)">${fmt$(p.entry)}</td>
+      <td style="color:${needPct>0?'var(--red)':'var(--green)'}">${needPct>0?'+'+needPct.toFixed(1)+'%':'✓'}</td>
+      <td style="color:var(--dim);font-size:10px">${p.exchange||'—'}</td>
+      <td>
+        <button class="edit-btn" onclick="editPrice(${p.id})" title="Update price">✎</button>
+        <button class="del-btn" onclick="deletePos(${p.id})">✕</button>
+      </td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="12" style="text-align:center;color:var(--dim);padding:30px;">No positions yet — add your holdings above</td></tr>';
+}
+
+function set(id,val,cls){
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.textContent=val;
+  if(cls) el.className='scard-value '+cls;
+}
+
+function deletePos(id){
+  if(!confirm('Remove this position?')) return;
+  holdings=holdings.filter(h=>h.id!==id);
+  save(); renderHoldings();
+}
+
+function editPrice(id){
+  const h = holdings.find(p=>p.id===id);
+  if(!h) return;
+  const np = prompt(`Update current price for ${h.symbol} (current: $${h.current}):`, h.current);
+  if(np && !isNaN(parseFloat(np))){ h.current=parseFloat(np); save(); renderHoldings(); }
+}
+
+// ══════════════════════════════════════
+//  ROTATION SIMULATOR
+// ══════════════════════════════════════
+function renderRotationSelects(){
+  const opts = holdings.map(h=>`<option value="${h.id}">${h.symbol} — ${fmtN(h.amount,2)} @ ${fmt$(h.current)}</option>`).join('');
+  document.getElementById('simSellCoin').innerHTML = '<option value="">— Select —</option>'+opts;
+  document.getElementById('simBuyCoin').innerHTML  = '<option value="">— Select —</option>'+opts;
+}
+
+function calcRotation(){
+  const sellId    = document.getElementById('simSellCoin').value;
+  const buyId     = document.getElementById('simBuyCoin').value;
+  const sellPct   = parseFloat(document.getElementById('simSellPct').value)||50;
+  const sellPrice = parseFloat(document.getElementById('simSellPrice').value)||0;
+  const buyPrice  = parseFloat(document.getElementById('simBuyPrice').value)||0;
+  const targetPrice = parseFloat(document.getElementById('simTargetPrice').value)||0;
+
+  if(!sellId||!buyId||!sellPrice||!buyPrice){ document.getElementById('simResult').style.display='none'; return; }
+
+  const sellH = holdings.find(h=>h.id==sellId);
+  const buyH  = holdings.find(h=>h.id==buyId);
+  if(!sellH||!buyH) return;
+
+  const sellAmount   = sellH.amount*(sellPct/100);
+  const usdReceived  = sellAmount*sellPrice;
+  const fees         = usdReceived*0.002; // 0.2% round trip
+  const usdAfterFees = usdReceived-fees;
+  const extraCoins   = usdAfterFees/buyPrice;
+  const totalCoinsAfter = buyH.amount+extraCoins;
+
+  const valueBefore  = targetPrice>0 ? buyH.amount*targetPrice : 0;
+  const valueAfter   = targetPrice>0 ? totalCoinsAfter*targetPrice : 0;
+  const extraGain    = valueAfter-valueBefore;
+
+  const isGood = extraCoins>0 && (targetPrice===0 || valueAfter>valueBefore);
+
+  document.getElementById('simSellInfo').innerHTML = `Selling ${sellPct}% of ${sellH.symbol}<br>Amount: ${fmtN(sellAmount,4)} coins<br>USD received: ${fmt$(usdReceived)}<br>After fees (0.2%): ${fmt$(usdAfterFees)}`;
+  document.getElementById('simBuyInfo').innerHTML  = `Current ${buyH.symbol} holding: ${fmtN(buyH.amount,4)} coins<br>Buying at: ${fmt$(buyPrice)}<br>Extra coins: +${fmtN(extraCoins,4)}<br>Total after: ${fmtN(totalCoinsAfter,4)} coins`;
+
+  document.getElementById('rUSD').textContent         = fmt$(usdAfterFees);
+  document.getElementById('rExtraCoins').textContent  = '+'+fmtN(extraCoins,4)+' '+buyH.symbol;
+  document.getElementById('rTotalCoins').textContent  = fmtN(totalCoinsAfter,4)+' '+buyH.symbol;
+  document.getElementById('rValueBefore').textContent = targetPrice>0?fmt$(valueBefore):'Set target price';
+  document.getElementById('rValueAfter').textContent  = targetPrice>0?fmt$(valueAfter):'Set target price';
+  document.getElementById('rExtraGain').textContent   = targetPrice>0?fmt$(extraGain):'—';
+  const vEl = document.getElementById('rVerdict');
+  vEl.textContent = isGood ? '✅ ROTATION ADDS VALUE' : '⚠️ CHECK YOUR NUMBERS';
+  vEl.style.color = isGood?'var(--green)':'var(--yellow)';
+
+  document.getElementById('simResult').style.display='block';
+}
+
+// ══════════════════════════════════════
+//  STRATEGY — PERSONALIZED
+// ══════════════════════════════════════
+function renderStrategy(){
+  if(!holdings.length){
+    document.getElementById('situationText').textContent = 'Add your holdings to see a personalized assessment.';
+    return;
+  }
+  let totalInvested=0, totalValue=0;
+  holdings.forEach(p=>{ totalInvested+=p.amount*p.entry; totalValue+=p.amount*p.current; });
+  const totalRet    = ((totalValue-totalInvested)/totalInvested)*100;
+  const needPct     = ((totalInvested-totalValue)/totalValue)*100;
+  const pDown       = holdings.filter(p=>p.current<p.entry).length;
+  const worstHolder = [...holdings].sort((a,b)=>((a.current-a.entry)/a.entry)-((b.current-b.entry)/b.entry))[0];
+  const bestHolder  = [...holdings].sort((a,b)=>((b.current-b.entry)/b.entry)-((a.current-a.entry)/a.entry))[0];
+
+  let assessment = `You have invested ${fmt$(totalInvested)} total. Current value is ${fmt$(totalValue)} — you are down ${Math.abs(totalRet).toFixed(1)}% overall.\n\n`;
+  assessment += `To break even, your portfolio needs to gain ${needPct.toFixed(1)}% from here.\n\n`;
+  if(worstHolder) assessment += `Your worst position is ${worstHolder.symbol} — down ${Math.abs(((worstHolder.current-worstHolder.entry)/worstHolder.entry)*100).toFixed(1)}%.\n`;
+  if(bestHolder && bestHolder.current>=bestHolder.entry) assessment += `Your best position is ${bestHolder.symbol} — up ${((bestHolder.current-bestHolder.entry)/bestHolder.entry*100).toFixed(1)}%.`;
+  else if(bestHolder) assessment += `All positions are down. ${bestHolder.symbol} is closest to break even at ${((bestHolder.current-bestHolder.entry)/bestHolder.entry*100).toFixed(1)}%.`;
+
+  document.getElementById('situationText').style.whiteSpace = 'pre-line';
+  document.getElementById('situationText').textContent = assessment;
+}
+
+// ══════════════════════════════════════
+//  BULK IMPORT
+// ══════════════════════════════════════
+function importBulk(){
+  const lines = document.getElementById('importArea').value.trim().split('\n');
+  let added=0, errors=0;
+  lines.forEach(line=>{
+    const parts = line.split(',').map(s=>s.trim());
+    if(parts.length<4) return;
+    const symbol   = parts[0].toUpperCase();
+    const amount   = parseFloat(parts[1]);
+    const entry    = parseFloat(parts[2]);
+    const current  = parseFloat(parts[3]);
+    const exchange = parts[4]||'Unknown';
+    if(!symbol||isNaN(amount)||isNaN(entry)||isNaN(current)){ errors++; return; }
+    holdings.push({ id:Date.now()+Math.random(), symbol, name:symbol, amount, entry, current, exchange });
+    added++;
+  });
+  save();
+  renderHoldings();
+  document.getElementById('importResult').innerHTML = `<span style="color:var(--green)">✓ Added ${added} positions.</span>${errors>0?` <span style="color:var(--red)">${errors} lines had errors.</span>`:''}`;
+}
+
+// ══════════════════════════════════════
+//  EXPORT CSV
+// ══════════════════════════════════════
+function exportCSV(){
+  if(!holdings.length){ alert('No holdings to export.'); return; }
+  const rows = [['Symbol','Name','Amount','AvgEntry','CurrentPrice','Invested','Value','PL','Return%','Exchange']];
+  holdings.forEach(h=>{
+    const inv=(h.amount*h.entry).toFixed(2);
+    const val=(h.amount*h.current).toFixed(2);
+    const pl=(h.amount*(h.current-h.entry)).toFixed(2);
+    const ret=(((h.current-h.entry)/h.entry)*100).toFixed(2);
+    rows.push([h.symbol,h.name,h.amount,h.entry,h.current,inv,val,pl,ret+'%',h.exchange]);
+  });
+  const csv  = rows.map(r=>r.join(',')).join('\n');
+  const blob = new Blob([csv],{type:'text/csv'});
+  const a    = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'portfolio_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+function clearAll(){
+  if(!confirm('Clear all holdings?')) return;
+  holdings=[]; save(); renderHoldings();
+}
+
+// ══════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════
+renderHoldings();
+</script>
+</body>
+</html>

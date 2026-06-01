@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Binance USDT Pairs — TradingView Watchlist</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Barlow+Condensed:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07090f;--panel:#0c0f1a;--card:#111827;--border:#1a2535;--accent:#00d4ff;--green:#00ff9d;--red:#ff3355;--yellow:#ffd700;--text:#dce8f5;--dim:#4a6070;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'IBM Plex Mono',monospace;background:var(--bg);color:var(--text);min-height:100vh;padding:24px;}
+.hdr{text-align:center;margin-bottom:32px;}
+.logo{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--accent);letter-spacing:2px;}
+.logo span{color:var(--text);}
+.sub{font-size:12px;color:var(--dim);margin-top:6px;}
+.controls{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;margin-bottom:24px;}
+.btn{padding:10px 22px;border:none;border-radius:8px;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;transition:all .2s;}
+.btn-primary{background:var(--accent);color:#05070e;}
+.btn-primary:hover{opacity:.85;}
+.btn-green{background:var(--green);color:#05070e;}
+.btn-green:hover{opacity:.85;}
+.btn-ghost{background:transparent;color:var(--dim);border:1px solid var(--border);}
+.btn-ghost:hover{border-color:var(--dim);color:var(--text);}
+.filter-row{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;margin-bottom:20px;}
+.filter-btn{padding:6px 14px;font-size:11px;font-weight:600;letter-spacing:1px;border-radius:4px;cursor:pointer;font-family:'IBM Plex Mono',monospace;border:1px solid var(--border);background:transparent;color:var(--dim);transition:all .2s;}
+.filter-btn:hover{border-color:var(--accent);color:var(--accent);}
+.filter-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(0,212,255,.08);}
+.stats-row{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-bottom:20px;}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 18px;text-align:center;}
+.stat-val{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;color:var(--accent);}
+.stat-lbl{font-size:10px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-top:2px;}
+.output-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;}
+.output-title{font-size:10px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;}
+textarea{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:12px;border-radius:8px;resize:vertical;outline:none;line-height:1.6;}
+textarea:focus{border-color:var(--accent);}
+.instructions{background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.2);border-radius:10px;padding:16px;margin-bottom:20px;font-size:12px;line-height:1.8;color:#8ab0c0;}
+.instructions strong{color:var(--accent);}
+.loading{text-align:center;padding:40px;color:var(--dim);}
+.spin{display:inline-block;animation:spin 1s linear infinite;font-size:24px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.pair-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px;max-height:300px;overflow-y:auto;margin-top:10px;}
+.pair-tag{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:11px;color:var(--dim);cursor:pointer;transition:all .2s;text-align:center;}
+.pair-tag:hover{border-color:var(--accent);color:var(--accent);}
+.pair-tag.selected{border-color:var(--green);color:var(--green);background:rgba(0,255,157,.06);}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="logo">Binance <span>USDT Pairs</span></div>
+  <div class="sub">Fetch all pairs → export as TradingView watchlist</div>
+</div>
+
+<!-- INSTRUCTIONS -->
+<div class="instructions">
+  <strong>How to import into TradingView:</strong><br>
+  1. Click <strong>Fetch All Pairs</strong> below<br>
+  2. Choose your format and copy the text<br>
+  3. In TradingView → open Watchlist panel → click the <strong>⋮ menu</strong> → <strong>Import List</strong><br>
+  4. Paste the text → click Import<br>
+  All pairs will appear in your watchlist instantly.
+</div>
+
+<!-- CONTROLS -->
+<div class="controls">
+  <button class="btn btn-primary" onclick="fetchPairs()">▶ Fetch All Pairs</button>
+  <button class="btn btn-green" onclick="copyTV()" id="copyBtn" disabled>⎘ Copy TradingView Format</button>
+  <button class="btn btn-ghost" onclick="copyRaw()" id="copyRawBtn" disabled>⎘ Copy Raw Symbols</button>
+  <button class="btn btn-ghost" onclick="downloadTxt()" id="dlBtn" disabled>↓ Download .txt</button>
+</div>
+
+<!-- FILTERS -->
+<div class="filter-row" id="filterRow" style="display:none">
+  <span style="font-size:10px;color:var(--dim);letter-spacing:1px;">FILTER BY VOL:</span>
+  <button class="filter-btn active" onclick="setFilter('all',this)">All Pairs</button>
+  <button class="filter-btn" onclick="setFilter('top100',this)">Top 100 by Vol</button>
+  <button class="filter-btn" onclick="setFilter('top200',this)">Top 200 by Vol</button>
+  <button class="filter-btn" onclick="setFilter('top300',this)">Top 300 by Vol</button>
+  <button class="filter-btn" onclick="setFilter('gainers',this)">Top Gainers 24h</button>
+  <button class="filter-btn" onclick="setFilter('losers',this)">Top Losers 24h</button>
+</div>
+
+<!-- STATS -->
+<div class="stats-row" id="statsRow" style="display:none">
+  <div class="stat"><div class="stat-val" id="statTotal">0</div><div class="stat-lbl">Total Pairs</div></div>
+  <div class="stat"><div class="stat-val" id="statShowing">0</div><div class="stat-lbl">Showing</div></div>
+  <div class="stat"><div class="stat-val" id="statVol">—</div><div class="stat-lbl">Total 24h Vol</div></div>
+  <div class="stat"><div class="stat-val" id="statUp" style="color:var(--green)">0</div><div class="stat-lbl">Pairs Up</div></div>
+  <div class="stat"><div class="stat-val" id="statDown" style="color:var(--red)">0</div><div class="stat-lbl">Pairs Down</div></div>
+</div>
+
+<!-- LOADING -->
+<div class="loading" id="loadingEl" style="display:none">
+  <span class="spin">⟳</span>
+  <div style="margin-top:12px;font-size:12px;letter-spacing:2px;">FETCHING FROM BINANCE...</div>
+</div>
+
+<!-- OUTPUT -->
+<div class="output-box" id="outputBox" style="display:none">
+  <div class="output-title">TradingView Format (BINANCE:NEARUSDT) — paste directly into TradingView</div>
+  <textarea id="tvOutput" rows="12" readonly placeholder="Pairs will appear here..."></textarea>
+</div>
+
+<div class="output-box" id="rawBox" style="display:none">
+  <div class="output-title">Raw Symbols (NEARUSDT) — comma separated</div>
+  <textarea id="rawOutput" rows="6" readonly placeholder="Raw symbols will appear here..."></textarea>
+</div>
+
+<script>
+const REST = 'https://api.binance.com/api/v3';
+let allPairs = [];
+let filtered = [];
+let currentFilter = 'all';
+
+async function fetchPairs(){
+  document.getElementById('loadingEl').style.display='block';
+  document.getElementById('outputBox').style.display='none';
+  document.getElementById('rawBox').style.display='none';
+  document.getElementById('statsRow').style.display='none';
+  document.getElementById('filterRow').style.display='none';
+  document.getElementById('copyBtn').disabled=true;
+  document.getElementById('copyRawBtn').disabled=true;
+  document.getElementById('dlBtn').disabled=true;
+
+  try {
+    const res  = await fetch(`${REST}/ticker/24hr`);
+    const data = await res.json();
+
+    allPairs = data
+      .filter(t => t.symbol.endsWith('USDT') && parseFloat(t.quoteVolume) > 0)
+      .map(t => ({
+        symbol:  t.symbol,
+        base:    t.symbol.replace('USDT',''),
+        vol24:   parseFloat(t.quoteVolume),
+        change:  parseFloat(t.priceChangePercent),
+        price:   parseFloat(t.lastPrice)
+      }))
+      .sort((a,b) => b.vol24 - a.vol24);
+
+    document.getElementById('statTotal').textContent  = allPairs.length;
+    document.getElementById('statUp').textContent     = allPairs.filter(p=>p.change>0).length;
+    document.getElementById('statDown').textContent   = allPairs.filter(p=>p.change<0).length;
+    const totalVol = allPairs.reduce((s,p)=>s+p.vol24,0);
+    document.getElementById('statVol').textContent    = '$'+(totalVol/1e9).toFixed(1)+'B';
+
+    document.getElementById('loadingEl').style.display='none';
+    document.getElementById('statsRow').style.display='flex';
+    document.getElementById('filterRow').style.display='flex';
+
+    applyFilter();
+
+  } catch(e) {
+    document.getElementById('loadingEl').style.display='none';
+    alert('Error fetching pairs: '+e.message);
+  }
+}
+
+function setFilter(f, el){
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  applyFilter();
+}
+
+function applyFilter(){
+  switch(currentFilter){
+    case 'top100':   filtered = allPairs.slice(0,100); break;
+    case 'top200':   filtered = allPairs.slice(0,200); break;
+    case 'top300':   filtered = allPairs.slice(0,300); break;
+    case 'gainers':  filtered = [...allPairs].sort((a,b)=>b.change-a.change).slice(0,100); break;
+    case 'losers':   filtered = [...allPairs].sort((a,b)=>a.change-b.change).slice(0,100); break;
+    default:         filtered = allPairs;
+  }
+
+  document.getElementById('statShowing').textContent = filtered.length;
+
+  // TradingView format — one per line
+  const tvLines = filtered.map(p => `BINANCE:${p.symbol}`).join('\n');
+  document.getElementById('tvOutput').value = tvLines;
+
+  // Raw format — comma separated
+  const rawLine = filtered.map(p => p.symbol).join(',');
+  document.getElementById('rawOutput').value = rawLine;
+
+  document.getElementById('outputBox').style.display='block';
+  document.getElementById('rawBox').style.display='block';
+  document.getElementById('copyBtn').disabled=false;
+  document.getElementById('copyRawBtn').disabled=false;
+  document.getElementById('dlBtn').disabled=false;
+}
+
+function copyTV(){
+  const text = document.getElementById('tvOutput').value;
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = '✓ Copied!';
+    btn.style.background = 'var(--green)';
+    setTimeout(()=>{ btn.textContent='⎘ Copy TradingView Format'; btn.style.background=''; },2000);
+  });
+}
+
+function copyRaw(){
+  const text = document.getElementById('rawOutput').value;
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn = document.getElementById('copyRawBtn');
+    btn.textContent = '✓ Copied!';
+    setTimeout(()=>{ btn.textContent='⎘ Copy Raw Symbols'; },2000);
+  });
+}
+
+function downloadTxt(){
+  const text = document.getElementById('tvOutput').value;
+  const blob = new Blob([text],{type:'text/plain'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = 'binance_usdt_watchlist.txt';
+  a.click();
+}
+</script>
+<a href="index.html" style="position:fixed;bottom:20px;left:20px;z-index:9998;display:flex;align-items:center;gap:8px;background:rgba(9,12,22,.95);border:1px solid rgba(0,212,255,.25);color:#00d4ff;text-decoration:none;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;padding:8px 14px;border-radius:8px;letter-spacing:1px;backdrop-filter:blur(10px);" onmouseover="this.style.borderColor='rgba(0,212,255,.6)'" onmouseout="this.style.borderColor='rgba(0,212,255,.25)'">⌂ HOME</a>
+</body>
+</html>

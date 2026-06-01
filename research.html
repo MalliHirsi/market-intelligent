@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crypto Research Engine — Market Intelligent</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Barlow+Condensed:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#06080e;--panel:#090c16;--card:#0d1220;--border:#182030;
+  --accent:#00d4ff;--green:#00ff9d;--red:#ff3355;--yellow:#ffd700;
+  --orange:#ff6b35;--purple:#b06aff;--text:#dce8f5;--dim:#4a6070;--muted:#111827;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'IBM Plex Mono',monospace;background:var(--bg);color:var(--text);min-height:100vh;}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.025) 2px,rgba(0,0,0,.025) 4px);pointer-events:none;z-index:9999;}
+
+/* HEADER */
+.hdr{background:var(--panel);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:100;}
+.logo{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;letter-spacing:2px;color:var(--accent);}
+.logo span{color:var(--text);}
+.logo .tag{font-size:11px;color:var(--orange);margin-left:8px;}
+.home-btn{padding:7px 14px;background:transparent;border:1px solid var(--border);color:var(--dim);font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;border-radius:6px;cursor:pointer;letter-spacing:1px;text-decoration:none;display:inline-flex;align-items:center;gap:6px;transition:all .2s;}
+.home-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* MAIN LAYOUT */
+.main{max-width:960px;margin:0 auto;padding:28px 20px 60px;}
+
+/* INTRO */
+.intro{text-align:center;padding:40px 0 36px;}
+.intro h1{font-family:'Barlow Condensed',sans-serif;font-size:clamp(36px,6vw,64px);font-weight:900;letter-spacing:-1px;line-height:1;margin-bottom:12px;}
+.intro h1 .r{color:var(--red);}
+.intro h1 .g{color:var(--green);}
+.intro-sub{font-size:12px;color:var(--dim);line-height:1.7;max-width:520px;margin:0 auto 24px;}
+.warning-box{background:rgba(255,51,85,.06);border:1px solid rgba(255,51,85,.25);border-radius:8px;padding:12px 16px;font-size:11px;color:#c06070;line-height:1.6;max-width:600px;margin:0 auto;}
+.warning-box strong{color:var(--red);}
+
+/* INPUT FORM */
+.form-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:20px;}
+.form-title{font-size:9px;color:var(--dim);letter-spacing:3px;text-transform:uppercase;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.ig{display:flex;flex-direction:column;gap:5px;}
+.il{font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;}
+.if{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:10px 12px;border-radius:7px;outline:none;width:100%;transition:border-color .2s;}
+.if:focus{border-color:var(--accent);}
+.if::placeholder{color:var(--dim);}
+.analyze-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--accent),#0099bb);color:var(--bg);font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;border:none;border-radius:10px;cursor:pointer;letter-spacing:2px;text-transform:uppercase;transition:all .2s;}
+.analyze-btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,212,255,.25);}
+.analyze-btn:disabled{background:var(--muted);color:var(--dim);transform:none;box-shadow:none;cursor:not-allowed;}
+
+/* LOADING */
+.loading{display:none;text-align:center;padding:48px 20px;}
+.loading-ring{width:56px;height:56px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-text{font-size:12px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;}
+.loading-step{font-size:11px;color:var(--dim);margin-top:8px;}
+
+/* RESULTS */
+.results{display:none;}
+
+/* VERDICT BANNER */
+.verdict-banner{border-radius:14px;padding:28px;text-align:center;margin-bottom:24px;border:2px solid;}
+.verdict-banner.strong{background:rgba(0,255,157,.06);border-color:rgba(0,255,157,.4);}
+.verdict-banner.watchlist{background:rgba(0,212,255,.05);border-color:rgba(0,212,255,.3);}
+.verdict-banner.trade{background:rgba(255,215,0,.05);border-color:rgba(255,215,0,.3);}
+.verdict-banner.small{background:rgba(255,107,53,.06);border-color:rgba(255,107,53,.3);}
+.verdict-banner.avoid{background:rgba(255,51,85,.06);border-color:rgba(255,51,85,.3);}
+.verdict-word{font-family:'Barlow Condensed',sans-serif;font-size:52px;font-weight:900;letter-spacing:2px;line-height:1;}
+.verdict-banner.strong .verdict-word{color:var(--green);}
+.verdict-banner.watchlist .verdict-word{color:var(--accent);}
+.verdict-banner.trade .verdict-word{color:var(--yellow);}
+.verdict-banner.small .verdict-word{color:var(--orange);}
+.verdict-banner.avoid .verdict-word{color:var(--red);}
+.verdict-score{font-size:14px;margin-top:8px;}
+.verdict-desc{font-size:12px;color:var(--dim);margin-top:6px;line-height:1.6;}
+
+/* SCORE GRID */
+.score-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:24px;}
+.score-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;}
+.score-label{font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;}
+.score-num{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;display:inline-block;}
+.score-of{font-size:12px;color:var(--dim);margin-left:2px;}
+.score-bar-wrap{height:4px;background:var(--muted);border-radius:2px;overflow:hidden;margin-top:8px;}
+.score-bar{height:100%;border-radius:2px;transition:width .6s ease;}
+
+/* ANALYSIS SECTIONS */
+.sec-title{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin:24px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.analysis-block{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:12px;}
+.analysis-block-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px;}
+.analysis-text{font-size:12px;color:#8ab0c0;line-height:1.8;}
+.analysis-text strong{color:var(--text);}
+
+/* RISK FLAGS */
+.flag-list{display:flex;flex-direction:column;gap:6px;}
+.flag-item{display:flex;gap:10px;align-items:flex-start;font-size:12px;padding:8px 10px;border-radius:6px;line-height:1.5;}
+.flag-item.red{background:rgba(255,51,85,.06);border:1px solid rgba(255,51,85,.15);}
+.flag-item.yellow{background:rgba(255,215,0,.04);border:1px solid rgba(255,215,0,.15);}
+.flag-item.green{background:rgba(0,255,157,.04);border:1px solid rgba(0,255,157,.15);}
+.flag-icon{flex-shrink:0;font-size:14px;}
+
+/* HISTORY */
+.history-item{background:var(--muted);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;cursor:pointer;transition:all .2s;display:flex;justify-content:space-between;align-items:center;}
+.history-item:hover{border-color:var(--accent);}
+.hi-coin{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--text);}
+.hi-score{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;}
+.hi-date{font-size:10px;color:var(--dim);}
+
+@media(max-width:600px){.form-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="logo">QV <span>Research</span><span class="tag">AI-POWERED</span></div>
+  <a href="index.html" class="home-btn">⌂ HOME</a>
+</div>
+
+<div class="main">
+
+  <!-- INTRO -->
+  <div class="intro">
+    <h1>Crypto Project<br><span class="r">Research</span> <span class="g">Engine</span></h1>
+    <p class="intro-sub">Senior-level fundamental analysis on any crypto project. 13 scoring categories. Brutally honest. Assumes the project is guilty until the data proves otherwise.</p>
+    <div class="warning-box">
+      <strong>Not financial advice.</strong> This tool provides risk-based research intelligence. Always verify data independently. Past scores do not predict future performance. Assume every project has hidden risks.
+    </div>
+  </div>
+
+  <!-- INPUT FORM -->
+  <div class="form-card">
+    <div class="form-title">Project Input — Fill What You Have</div>
+    <div class="form-grid">
+      <div class="ig">
+        <label class="il">Project Name *</label>
+        <input class="if" id="iName" type="text" placeholder="e.g. Aptos">
+      </div>
+      <div class="ig">
+        <label class="il">Ticker *</label>
+        <input class="if" id="iTicker" type="text" placeholder="e.g. APT" style="text-transform:uppercase">
+      </div>
+      <div class="ig">
+        <label class="il">Chain</label>
+        <input class="if" id="iChain" type="text" placeholder="e.g. Solana, Ethereum, BNB">
+      </div>
+      <div class="ig">
+        <label class="il">Contract Address</label>
+        <input class="if" id="iContract" type="text" placeholder="0x... or leave blank">
+      </div>
+      <div class="ig">
+        <label class="il">Website</label>
+        <input class="if" id="iWebsite" type="text" placeholder="https://...">
+      </div>
+      <div class="ig">
+        <label class="il">Twitter/X</label>
+        <input class="if" id="iTwitter" type="text" placeholder="@handle or URL">
+      </div>
+    </div>
+    <div class="ig" style="margin-bottom:16px;">
+      <label class="il">Docs / Whitepaper URL</label>
+      <input class="if" id="iDocs" type="text" placeholder="https://docs...">
+    </div>
+    <div class="ig" style="margin-bottom:16px;">
+      <label class="il">Additional Context (optional)</label>
+      <input class="if" id="iContext" type="text" placeholder="e.g. recently listed, whale activity noticed, planning to buy...">
+    </div>
+    <button class="analyze-btn" id="analyzeBtn" onclick="runAnalysis()">▶ ANALYZE PROJECT</button>
+  </div>
+
+  <!-- LOADING -->
+  <div class="loading" id="loadingEl">
+    <div class="loading-ring"></div>
+    <div class="loading-text">Analyzing Project</div>
+    <div class="loading-step" id="loadingStep">Fetching data and running 13-category research...</div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="results" id="resultsEl">
+
+    <!-- VERDICT -->
+    <div class="verdict-banner" id="verdictBanner">
+      <div class="verdict-word" id="verdictWord">—</div>
+      <div class="verdict-score" id="verdictScore"></div>
+      <div class="verdict-desc" id="verdictDesc"></div>
+    </div>
+
+    <!-- SCORES -->
+    <div class="sec-title">Scoring — 13 Categories</div>
+    <div class="score-grid" id="scoreGrid"></div>
+
+    <!-- ANALYSIS -->
+    <div id="analysisContent"></div>
+
+    <!-- RESEARCH AGAIN -->
+    <button class="analyze-btn" style="margin-top:20px;" onclick="resetForm()">↺ Research Another Project</button>
+  </div>
+
+  <!-- HISTORY -->
+  <div id="historySection" style="display:none;margin-top:32px;">
+    <div class="sec-title">Research History</div>
+    <div id="historyList"></div>
+  </div>
+
+</div>
+
+<script>
+const SYSTEM_PROMPT = `You are a senior blockchain developer, crypto fund researcher, tokenomics analyst, and risk manager.
+
+Your job is to evaluate a crypto project with brutal honesty. Your goal is NOT to hype the project. Your goal is to find truth, risk, weakness, manipulation, and real potential.
+
+CRITICAL RULES:
+- Assume the project is GUILTY until data proves otherwise
+- Do NOT give financial advice
+- Be brutally honest about red flags
+- Separate project quality from trade timing
+- A good project can still be a bad buy at the wrong price
+
+You must research and score the project across 13 categories. Use your knowledge about the project and the crypto space.
+
+For each category give a score 0-10 and a brief honest assessment.
+
+Categories:
+1. Project Identity (0-10): Problem clarity, real users, live vs promises
+2. Team & Founders (0-10): Public, experienced, credible, active
+3. Product & Technology (0-10): Working product, audited, open source, unique
+4. Token Utility (0-10): Real use case, value capture, necessary token
+5. Tokenomics & Supply (0-10): FDV, unlocks, insider allocation, emissions
+6. On-Chain Health (0-10): Active wallets, TVL, real volume, holder distribution
+7. Revenue & Business Model (0-10): Real revenue, sustainable fees, organic usage
+8. Community & Narrative (0-10): Real community, builder activity, sector positioning
+9. Competitive Position (0-10): Moat, differentiation, category leader vs follower
+10. Security & Rug Risk (0-10): Audits, multisig, contract risk, team anonymity
+11. Exchange & Liquidity (0-10): Where listed, depth, slippage, exit ability
+12. Timing & Market Cycle (0-10): Early/mid/late cycle, unlocks, attention trend
+13. Bagholder Risk (0-10): Would you hold if down 70%? Investment grade or trade only?
+
+Total possible: 130 points
+
+RESPONSE FORMAT - You must respond with valid JSON only, no markdown, no extra text:
+{
+  "project": "Project Name",
+  "ticker": "TICKER",
+  "summary": "2-3 sentence plain English description of what this project actually does",
+  "scores": {
+    "identity": 7,
+    "team": 5,
+    "product": 6,
+    "utility": 7,
+    "tokenomics": 4,
+    "onchain": 6,
+    "revenue": 5,
+    "community": 7,
+    "competition": 6,
+    "security": 7,
+    "liquidity": 8,
+    "timing": 6,
+    "bagholder": 5
+  },
+  "total": 79,
+  "verdict": "WATCHLIST",
+  "bull_case": "The 2-3 strongest reasons this project could succeed",
+  "bear_case": "The 2-3 strongest reasons this project could fail",
+  "biggest_risks": ["Risk 1", "Risk 2", "Risk 3"],
+  "red_flags": ["Flag 1", "Flag 2"],
+  "tokenomics_warning": "Specific warning about token supply, unlocks, or inflation",
+  "holders_benefit": true,
+  "investable_or_tradable": "TRADABLE",
+  "avoid_if_trade_fails": true,
+  "final_decision": "WATCHLIST",
+  "decision_reasoning": "One clear sentence explaining the final decision"
+}
+
+verdict and final_decision must be one of: STRONG_CANDIDATE, WATCHLIST, TRADE_ONLY, SMALL_POSITION, AVOID
+
+Score the project honestly. If you don't have enough data on a category, score it lower (5 or below) to reflect uncertainty.`;
+
+let researchHistory = JSON.parse(localStorage.getItem('research_history') || '[]');
+
+async function runAnalysis() {
+  const name     = document.getElementById('iName').value.trim();
+  const ticker   = document.getElementById('iTicker').value.trim().toUpperCase();
+  const chain    = document.getElementById('iChain').value.trim();
+  const contract = document.getElementById('iContract').value.trim();
+  const website  = document.getElementById('iWebsite').value.trim();
+  const twitter  = document.getElementById('iTwitter').value.trim();
+  const docs     = document.getElementById('iDocs').value.trim();
+  const context  = document.getElementById('iContext').value.trim();
+
+  if (!name || !ticker) {
+    alert('Please enter at least the Project Name and Ticker.');
+    return;
+  }
+
+  // Show loading
+  document.getElementById('loadingEl').style.display = 'block';
+  document.getElementById('resultsEl').style.display = 'none';
+  document.getElementById('analyzeBtn').disabled = true;
+
+  const steps = [
+    'Identifying project category and problem space...',
+    'Researching team background and history...',
+    'Evaluating technology and product status...',
+    'Analyzing tokenomics and supply structure...',
+    'Checking on-chain metrics and health...',
+    'Assessing competitive position...',
+    'Evaluating security and rug risk...',
+    'Calculating final score and verdict...'
+  ];
+  let stepIdx = 0;
+  const stepInterval = setInterval(() => {
+    if (stepIdx < steps.length) {
+      document.getElementById('loadingStep').textContent = steps[stepIdx++];
+    }
+  }, 2000);
+
+  const userMessage = `Analyze this crypto project with brutal honesty:
+
+Project Name: ${name}
+Ticker: ${ticker}
+Chain: ${chain || 'Unknown'}
+Contract: ${contract || 'Not provided'}
+Website: ${website || 'Not provided'}
+Twitter/X: ${twitter || 'Not provided'}
+Docs: ${docs || 'Not provided'}
+Additional context: ${context || 'None'}
+
+Use your knowledge about ${ticker} / ${name} to score all 13 categories. If this is a project you have data on, use it. If not, score categories lower to reflect uncertainty. Be brutally honest. Assume it is guilty until proven otherwise.`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: userMessage }]
+      })
+    });
+
+    clearInterval(stepInterval);
+    const data = await response.json();
+    const raw  = data.content?.map(c => c.text || '').join('');
+
+    // Parse JSON — strip any markdown fences
+    const clean = raw.replace(/```json|```/g, '').trim();
+    let result;
+    try {
+      result = JSON.parse(clean);
+    } catch(e) {
+      // Try to extract JSON from the response
+      const match = clean.match(/\{[\s\S]*\}/);
+      if (match) result = JSON.parse(match[0]);
+      else throw new Error('Could not parse response');
+    }
+
+    // Save to history
+    result._date = new Date().toISOString().slice(0, 10);
+    researchHistory.unshift(result);
+    if (researchHistory.length > 20) researchHistory.pop();
+    localStorage.setItem('research_history', JSON.stringify(researchHistory));
+
+    renderResults(result);
+  } catch(e) {
+    clearInterval(stepInterval);
+    document.getElementById('loadingEl').style.display = 'none';
+    document.getElementById('analyzeBtn').disabled = false;
+    alert('Analysis failed: ' + e.message + '\n\nTry again or check your connection.');
+  }
+}
+
+function renderResults(r) {
+  document.getElementById('loadingEl').style.display = 'none';
+  document.getElementById('analyzeBtn').disabled = false;
+  document.getElementById('resultsEl').style.display = 'block';
+
+  // Verdict banner
+  const vClass = {
+    STRONG_CANDIDATE: 'strong',
+    WATCHLIST: 'watchlist',
+    TRADE_ONLY: 'trade',
+    SMALL_POSITION: 'small',
+    AVOID: 'avoid'
+  }[r.final_decision] || 'watchlist';
+
+  const vLabel = {
+    STRONG_CANDIDATE: '✅ STRONG CANDIDATE',
+    WATCHLIST: '👁 WATCHLIST',
+    TRADE_ONLY: '⚡ TRADE ONLY',
+    SMALL_POSITION: '⚠️ SMALL POSITION ONLY',
+    AVOID: '❌ AVOID'
+  }[r.final_decision] || r.final_decision;
+
+  document.getElementById('verdictBanner').className = 'verdict-banner ' + vClass;
+  document.getElementById('verdictWord').textContent  = vLabel;
+  document.getElementById('verdictScore').innerHTML   = `<strong style="font-size:20px">${r.total}</strong><span style="color:var(--dim)"> / 130 points</span>`;
+  document.getElementById('verdictDesc').textContent  = r.decision_reasoning || '';
+
+  // Score grid
+  const scoreLabels = {
+    identity:'Project Identity', team:'Team & Founders', product:'Product & Tech',
+    utility:'Token Utility', tokenomics:'Tokenomics', onchain:'On-Chain Health',
+    revenue:'Revenue Model', community:'Community', competition:'Competition',
+    security:'Security', liquidity:'Liquidity', timing:'Timing', bagholder:'Bagholder Risk'
+  };
+  const s = r.scores || {};
+  document.getElementById('scoreGrid').innerHTML = Object.entries(scoreLabels).map(([k, label]) => {
+    const score = s[k] ?? 0;
+    const pct   = score * 10;
+    const color = score >= 7 ? 'var(--green)' : score >= 5 ? 'var(--yellow)' : score >= 3 ? 'var(--orange)' : 'var(--red)';
+    return `<div class="score-item">
+      <div class="score-label">${label}</div>
+      <div>
+        <span class="score-num" style="color:${color}">${score}</span>
+        <span class="score-of">/ 10</span>
+      </div>
+      <div class="score-bar-wrap">
+        <div class="score-bar" style="width:${pct}%;background:${color}"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Analysis content
+  let html = '';
+
+  // Summary
+  html += `<div class="sec-title">What This Project Does</div>
+    <div class="analysis-block">
+      <div class="analysis-text">${r.summary || '—'}</div>
+    </div>`;
+
+  // Bull / Bear
+  html += `<div class="sec-title">Bull Case vs Bear Case</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="analysis-block" style="border-left:3px solid var(--green)">
+        <div class="analysis-block-title" style="color:var(--green)">🐂 Bull Case</div>
+        <div class="analysis-text">${r.bull_case || '—'}</div>
+      </div>
+      <div class="analysis-block" style="border-left:3px solid var(--red)">
+        <div class="analysis-block-title" style="color:var(--red)">🐻 Bear Case</div>
+        <div class="analysis-text">${r.bear_case || '—'}</div>
+      </div>
+    </div>`;
+
+  // Tokenomics warning
+  html += `<div class="sec-title">Tokenomics Warning</div>
+    <div class="analysis-block" style="border-left:3px solid var(--yellow)">
+      <div class="analysis-block-title" style="color:var(--yellow)">⚠️ Supply & Unlock Risk</div>
+      <div class="analysis-text">${r.tokenomics_warning || '—'}</div>
+    </div>`;
+
+  // Red flags
+  if (r.red_flags && r.red_flags.length) {
+    html += `<div class="sec-title">Red Flags</div><div class="flag-list">`;
+    html += r.red_flags.map(f => `<div class="flag-item red"><span class="flag-icon">🚩</span><span>${f}</span></div>`).join('');
+    html += '</div>';
+  }
+
+  // Key risks
+  if (r.biggest_risks && r.biggest_risks.length) {
+    html += `<div class="sec-title">Biggest Risks</div><div class="flag-list">`;
+    html += r.biggest_risks.map(f => `<div class="flag-item yellow"><span class="flag-icon">⚠️</span><span>${f}</span></div>`).join('');
+    html += '</div>';
+  }
+
+  // Final verdicts
+  html += `<div class="sec-title">Final Assessment</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:12px;">
+      <div class="analysis-block">
+        <div class="score-label">Do token holders benefit?</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:${r.holders_benefit?'var(--green)':'var(--red)'};margin-top:6px">${r.holders_benefit?'✅ YES':'❌ NO'}</div>
+      </div>
+      <div class="analysis-block">
+        <div class="score-label">Investable or tradable?</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:${r.investable_or_tradable==='INVESTABLE'?'var(--green)':'var(--yellow)'};margin-top:6px">${r.investable_or_tradable||'—'}</div>
+      </div>
+      <div class="analysis-block">
+        <div class="score-label">Avoid if trade fails?</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:${r.avoid_if_trade_fails?'var(--red)':'var(--green)'};margin-top:6px">${r.avoid_if_trade_fails?'⚠️ YES — EXIT':'✅ NO — CAN HOLD'}</div>
+      </div>
+    </div>`;
+
+  document.getElementById('analysisContent').innerHTML = html;
+  renderHistory();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function resetForm() {
+  document.getElementById('resultsEl').style.display  = 'none';
+  document.getElementById('analyzeBtn').disabled = false;
+  ['iName','iTicker','iChain','iContract','iWebsite','iTwitter','iDocs','iContext'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function renderHistory() {
+  if (!researchHistory.length) return;
+  document.getElementById('historySection').style.display = 'block';
+  const colorMap = {
+    STRONG_CANDIDATE:'var(--green)', WATCHLIST:'var(--accent)',
+    TRADE_ONLY:'var(--yellow)', SMALL_POSITION:'var(--orange)', AVOID:'var(--red)'
+  };
+  document.getElementById('historyList').innerHTML = researchHistory.slice(0,10).map(r => `
+    <div class="history-item" onclick="renderResults(${JSON.stringify(r).replace(/"/g,'&quot;')})">
+      <div>
+        <div class="hi-coin">${r.ticker || r.project}</div>
+        <div class="hi-date">${r._date || ''} · ${r.final_decision?.replace(/_/g,' ') || ''}</div>
+      </div>
+      <div class="hi-score" style="color:${colorMap[r.final_decision]||'var(--text)'}">${r.total}/130</div>
+    </div>`).join('');
+}
+
+// Init
+renderHistory();
+document.getElementById('iTicker').addEventListener('input', function(){ this.value = this.value.toUpperCase(); });
+</script>
+</body>
+</html>

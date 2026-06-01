@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QV Trade Journal</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Barlow+Condensed:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07090f;--panel:#0c0f1a;--card:#0f1520;--border:#1a2535;
+  --accent:#00d4ff;--green:#00ff9d;--red:#ff3355;--yellow:#ffd700;
+  --purple:#b06aff;--text:#dce8f5;--dim:#4a6070;--muted:#111827;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'IBM Plex Mono',monospace;background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* HEADER */
+.hdr{background:var(--panel);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:100;}
+.logo{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;letter-spacing:2px;color:var(--accent);}
+.logo span{color:var(--text);}
+.hdr-bal{text-align:right;}
+.hdr-bal-label{font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;}
+.hdr-bal-value{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;color:var(--green);}
+
+/* TABS */
+.tabs{display:flex;background:var(--panel);border-bottom:1px solid var(--border);overflow-x:auto;}
+.tab{padding:10px 20px;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none;font-family:'IBM Plex Mono',monospace;white-space:nowrap;transition:all .2s;}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+/* PAGES */
+.page{display:none;padding:20px;max-width:1000px;margin:0 auto;}
+.page.active{display:block;}
+
+/* SECTION */
+.sec{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+
+/* STAT CARDS */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:20px;}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;}
+.stat-label{font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;}
+.stat-value{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:700;}
+.stat-value.g{color:var(--green);}
+.stat-value.r{color:var(--red);}
+.stat-value.y{color:var(--yellow);}
+.stat-value.a{color:var(--accent);}
+.stat-sub{font-size:10px;color:var(--dim);margin-top:3px;}
+
+/* SIZER CARD */
+.sizer{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;}
+.sizer-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+.ig{display:flex;flex-direction:column;gap:5px;}
+.il{font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;}
+.if{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:14px;padding:10px 12px;border-radius:7px;outline:none;width:100%;transition:border-color .2s;}
+.if:focus{border-color:var(--accent);}
+.isel{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:10px 12px;border-radius:7px;outline:none;width:100%;cursor:pointer;}
+
+/* RESULT BOX */
+.result-box{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px;}
+.rrow{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(26,37,53,.8);}
+.rrow:last-child{border-bottom:none;}
+.rl{font-size:11px;color:var(--dim);}
+.rv{font-size:13px;font-weight:600;}
+.rv.g{color:var(--green);}
+.rv.r{color:var(--red);}
+.rv.y{color:var(--yellow);}
+.rv.a{color:var(--accent);}
+.rv.big{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;}
+
+/* BUTTONS */
+.btn{padding:11px 22px;border:none;border-radius:8px;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;transition:all .2s;}
+.btn-primary{background:var(--accent);color:var(--bg);}
+.btn-primary:hover{opacity:.85;}
+.btn-green{background:var(--green);color:var(--bg);}
+.btn-green:hover{opacity:.85;}
+.btn-ghost{background:transparent;color:var(--dim);border:1px solid var(--border);}
+.btn-ghost:hover{border-color:var(--dim);color:var(--text);}
+.btn-full{width:100%;}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto;margin-bottom:20px;}
+table{width:100%;border-collapse:collapse;font-size:11px;min-width:700px;}
+th{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);padding:9px 10px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;}
+td{padding:9px 10px;border-bottom:1px solid rgba(26,37,53,.6);vertical-align:middle;white-space:nowrap;}
+tr:hover td{background:rgba(255,255,255,.015);}
+.badge{font-size:9px;font-weight:700;padding:2px 8px;border-radius:3px;letter-spacing:1px;}
+.badge.win{background:rgba(0,255,157,.12);color:var(--green);border:1px solid rgba(0,255,157,.3);}
+.badge.loss{background:rgba(255,51,85,.12);color:var(--red);border:1px solid rgba(255,51,85,.3);}
+.badge.be{background:rgba(255,215,0,.1);color:var(--yellow);border:1px solid rgba(255,215,0,.25);}
+.del{background:none;border:none;color:var(--dim);cursor:pointer;font-size:13px;padding:2px 6px;}
+.del:hover{color:var(--red);}
+
+/* COMPOUND PROGRESS */
+.prog-wrap{background:rgba(255,255,255,.04);border-radius:4px;height:8px;overflow:hidden;margin-top:6px;}
+.prog-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--green));transition:width .5s;}
+
+/* MONTHLY TABLE */
+.month-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:20px;}
+.month-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;}
+.month-title{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--accent);margin-bottom:10px;}
+.mrow{display:flex;justify-content:space-between;font-size:11px;padding:3px 0;color:var(--dim);}
+.mrow span:last-child{color:var(--text);font-weight:600;}
+
+/* CHART */
+.chart-area{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:20px;}
+canvas{width:100%!important;display:block;}
+
+@media(max-width:600px){
+  .sizer-row{grid-template-columns:1fr;}
+  .stats{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="logo">QV <span>Journal</span></div>
+  <div class="hdr-bal">
+    <div class="hdr-bal-label">Current Balance</div>
+    <div class="hdr-bal-value" id="hdrBal">$1,000.00</div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="showTab('sizer',this)">Position Sizer</button>
+  <button class="tab" onclick="showTab('log',this)">Log Trade</button>
+  <button class="tab" onclick="showTab('journal',this)">Journal</button>
+  <button class="tab" onclick="showTab('monthly',this)">Monthly</button>
+  <button class="tab" onclick="showTab('compound',this)">Compound</button>
+</div>
+
+<!-- ═══ POSITION SIZER ═══ -->
+<div class="page active" id="tab-sizer">
+  <div class="sec" style="margin-top:20px;">Step 1 — Before You Enter the Trade</div>
+
+  <div class="sizer">
+    <div class="sizer-row">
+      <div class="ig">
+        <label class="il">Current Account Balance ($)</label>
+        <input class="if" id="sBalance" type="number" value="1000" step="0.01" oninput="calcSizer()">
+      </div>
+      <div class="ig">
+        <label class="il">Fee Type</label>
+        <select class="isel" id="sFeeType" onchange="calcSizer()">
+          <option value="0.002">Standard (0.1% + 0.1% = 0.2%)</option>
+          <option value="0.0015">With BNB (0.075% + 0.075% = 0.15%)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="result-box">
+      <div class="rrow">
+        <span class="rl">Account Balance</span>
+        <span class="rv a" id="rBalance">$1,000.00</span>
+      </div>
+      <div class="rrow">
+        <span class="rl">Max Daily Risk (1.5%)</span>
+        <span class="rv r" id="rDayRisk">$15.00</span>
+      </div>
+      <div class="rrow">
+        <span class="rl">Max Position Size (this trade)</span>
+        <span class="rv big a" id="rMaxPos">$1,000.00</span>
+      </div>
+      <div class="rrow">
+        <span class="rl">Estimated Fees (round trip)</span>
+        <span class="rv r" id="rFees">$2.00</span>
+      </div>
+      <div class="rrow">
+        <span class="rl">Slippage Estimate (0.05%)</span>
+        <span class="rv r" id="rSlippage">$0.50</span>
+      </div>
+      <div class="rrow">
+        <span class="rl">Total Cost to Enter + Exit</span>
+        <span class="rv r" id="rTotalCost">$2.50</span>
+      </div>
+      <div class="rrow">
+        <span class="rl">You need to make more than</span>
+        <span class="rv y" id="rBreakeven">$2.50 just to break even</span>
+      </div>
+    </div>
+
+    <div style="background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.2);border-radius:8px;padding:12px;font-size:11px;color:#8ab0c0;line-height:1.7;margin-bottom:14px;">
+      💡 <strong style="color:var(--accent)">How to use this:</strong> Enter your current balance → note the Max Position Size → enter that amount on Binance → after the trade closes, go to Log Trade and record what happened.
+    </div>
+
+    <button class="btn btn-green btn-full" onclick="showTab('log',document.querySelectorAll('.tab')[1])">→ Trade placed. Now log it →</button>
+  </div>
+
+  <!-- DAILY RISK TRACKER -->
+  <div class="sec">Today's Risk Status</div>
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-label">Trades Today</div>
+      <div class="stat-value a" id="todayTrades">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Today P&L</div>
+      <div class="stat-value" id="todayPL">$0.00</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Daily Risk Used</div>
+      <div class="stat-value" id="todayRiskUsed">0%</div>
+      <div class="stat-sub">Max 1.5% per day</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Can Still Trade?</div>
+      <div class="stat-value" id="canTrade">YES</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LOG TRADE ═══ -->
+<div class="page" id="tab-log">
+  <div class="sec" style="margin-top:20px;">Log a Completed Trade</div>
+
+  <div class="sizer">
+    <div class="sizer-row">
+      <div class="ig">
+        <label class="il">Date</label>
+        <input class="if" id="lDate" type="date">
+      </div>
+      <div class="ig">
+        <label class="il">Pair</label>
+        <input class="if" id="lPair" type="text" placeholder="NEARUSDT" style="text-transform:uppercase">
+      </div>
+      <div class="ig">
+        <label class="il">Entry Price ($)</label>
+        <input class="if" id="lEntry" type="number" step="0.000001" placeholder="2.100" oninput="calcLog()">
+      </div>
+      <div class="ig">
+        <label class="il">Exit Price ($)</label>
+        <input class="if" id="lExit" type="number" step="0.000001" placeholder="2.319" oninput="calcLog()">
+      </div>
+      <div class="ig">
+        <label class="il">Position Size Used ($)</label>
+        <input class="if" id="lSize" type="number" step="0.01" placeholder="700" oninput="calcLog()">
+      </div>
+      <div class="ig">
+        <label class="il">Fee Type</label>
+        <select class="isel" id="lFeeType" onchange="calcLog()">
+          <option value="0.002">Standard (0.2% round trip)</option>
+          <option value="0.0015">With BNB (0.15% round trip)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- CALCULATED RESULT -->
+    <div class="result-box" id="logResult">
+      <div class="rrow">
+        <span class="rl">Gross P&L</span>
+        <span class="rv" id="lGrossPL">—</span>
+      </div>
+      <div class="rrow">
+        <span class="rl">Fees Paid (round trip)</span>
+        <span class="rv r" id="lFeesPaid">—</span>
+      </div>
+      <div class="rrow">
+        <span class="rl">Slippage (est. 0.05%)</span>
+        <span class="rv r" id="lSlippage">—</span>
+      </div>
+      <div class="rrow">
+        <span class="rl">Net P&L (after all costs)</span>
+        <span class="rv big" id="lNetPL">—</span>
+      </div>
+      <div class="rrow">
+        <span class="rl">ROI on position</span>
+        <span class="rv" id="lROI">—</span>
+      </div>
+      <div class="rrow">
+        <span class="rl">New Account Balance</span>
+        <span class="rv a" id="lNewBal">—</span>
+      </div>
+      <div class="rrow">
+        <span class="rl">Result</span>
+        <span class="rv" id="lResult">—</span>
+      </div>
+    </div>
+
+    <div class="ig" style="margin-bottom:14px;">
+      <label class="il">Notes (optional)</label>
+      <input class="if" id="lNotes" type="text" placeholder="What happened? Why did you exit?">
+    </div>
+
+    <button class="btn btn-green btn-full" onclick="saveTrade()">✓ Save Trade to Journal</button>
+  </div>
+</div>
+
+<!-- ═══ JOURNAL ═══ -->
+<div class="page" id="tab-journal">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+    <div class="sec" style="margin:0;border:none;padding:0;">All Trades</div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost" onclick="exportCSV()" style="font-size:10px;padding:7px 14px;">↓ Export CSV</button>
+      <button class="btn btn-ghost" onclick="clearAll()" style="font-size:10px;padding:7px 14px;color:var(--red);">Clear All</button>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-label">Total Trades</div>
+      <div class="stat-value a" id="jTotal">0</div>
+      <div class="stat-sub" id="jProgress">0 / 365</div>
+      <div class="prog-wrap"><div class="prog-fill" id="jProgBar" style="width:0%"></div></div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Win Rate</div>
+      <div class="stat-value g" id="jWR">—</div>
+      <div class="stat-sub" id="jWL">0W / 0L</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Net P&L</div>
+      <div class="stat-value" id="jNetPL">$0.00</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Avg Win</div>
+      <div class="stat-value g" id="jAvgWin">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Avg Loss</div>
+      <div class="stat-value r" id="jAvgLoss">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Profit Factor</div>
+      <div class="stat-value y" id="jPF">—</div>
+      <div class="stat-sub">gross wins / gross losses</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Total Fees Paid</div>
+      <div class="stat-value r" id="jFees">$0.00</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Starting Balance</div>
+      <div class="stat-value dim" id="jStartBal">$1,000.00</div>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Date</th>
+          <th>Pair</th>
+          <th>Entry $</th>
+          <th>Exit $</th>
+          <th>Size $</th>
+          <th>Gross P&L</th>
+          <th>Fees</th>
+          <th>Net P&L</th>
+          <th>ROI %</th>
+          <th>Balance After</th>
+          <th>W/L</th>
+          <th>Notes</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="jBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ MONTHLY ═══ -->
+<div class="page" id="tab-monthly">
+  <div class="sec" style="margin-top:20px;">Monthly & Quarterly Breakdown</div>
+  <div class="month-grid" id="monthGrid"></div>
+
+  <div class="sec">Quarterly Summary</div>
+  <div class="month-grid" id="quarterGrid"></div>
+</div>
+
+<!-- ═══ COMPOUND ═══ -->
+<div class="page" id="tab-compound">
+  <div class="sec" style="margin-top:20px;">365 Trades Compound Tracker</div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-label">Trades Logged</div>
+      <div class="stat-value a" id="cTotal">0</div>
+      <div class="stat-sub">out of 365</div>
+      <div class="prog-wrap"><div class="prog-fill" id="cProgBar" style="width:0%"></div></div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Starting Capital</div>
+      <div class="stat-value dim" id="cStart">$1,000</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Current Balance</div>
+      <div class="stat-value g" id="cCurrent">$1,000</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Total Return</div>
+      <div class="stat-value" id="cReturn">0%</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Avg Net per Trade</div>
+      <div class="stat-value y" id="cAvgTrade">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Projected at 365</div>
+      <div class="stat-value a" id="cProjected">—</div>
+      <div class="stat-sub">if avg holds</div>
+    </div>
+  </div>
+
+  <!-- CHART -->
+  <div class="chart-area">
+    <div class="sec">Balance Curve — Actual vs Theoretical (3% avg win)</div>
+    <canvas id="compChart" height="200"></canvas>
+  </div>
+
+  <!-- COMPOUND TABLE — last 10 trades -->
+  <div class="sec">Recent Trade Impact</div>
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Trade #</th>
+          <th>Date</th>
+          <th>Pair</th>
+          <th>Net P&L</th>
+          <th>Balance After</th>
+          <th>% Change</th>
+          <th>W/L</th>
+        </tr>
+      </thead>
+      <tbody id="cBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+//  STATE — persisted to localStorage
+// ══════════════════════════════════════
+let state = {
+  startingBalance: 1000,
+  trades: []
+};
+
+try {
+  const s = localStorage.getItem('qv_journal_v2');
+  if(s) state = JSON.parse(s);
+} catch(e){}
+
+function save(){ try{ localStorage.setItem('qv_journal_v2', JSON.stringify(state)); }catch(e){} }
+
+// ══════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════
+function fmt$(n, decimals=2){
+  if(n===undefined||n===null||isNaN(n)) return '—';
+  const abs = Math.abs(n);
+  if(abs>=1000) return (n<0?'-':'')+'$'+abs.toLocaleString('en',{minimumFractionDigits:decimals,maximumFractionDigits:decimals});
+  return (n<0?'-$':'$')+abs.toFixed(decimals);
+}
+function fmtPct(n){ if(isNaN(n)) return '—'; return (n>=0?'+':'')+n.toFixed(2)+'%'; }
+function currentBalance(){
+  if(!state.trades.length) return state.startingBalance;
+  return state.trades[state.trades.length-1].balanceAfter;
+}
+function today(){ return new Date().toISOString().slice(0,10); }
+
+// ══════════════════════════════════════
+//  TABS
+// ══════════════════════════════════════
+function showTab(id, el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  if(el) el.classList.add('active');
+  if(id==='journal') renderJournal();
+  if(id==='monthly') renderMonthly();
+  if(id==='compound') renderCompound();
+  if(id==='sizer') calcSizer();
+}
+
+// ══════════════════════════════════════
+//  POSITION SIZER
+// ══════════════════════════════════════
+function calcSizer(){
+  const bal     = parseFloat(document.getElementById('sBalance').value) || currentBalance();
+  const feeRate = parseFloat(document.getElementById('sFeeType').value) || 0.002;
+  const slip    = 0.0005;
+
+  const dayRisk  = bal * 0.015;
+  const maxPos   = bal;          // enter full balance — risk is managed by exit
+  const fees     = maxPos * feeRate;
+  const slippage = maxPos * slip;
+  const totalCost = fees + slippage;
+
+  document.getElementById('hdrBal').textContent      = fmt$(currentBalance());
+  document.getElementById('rBalance').textContent    = fmt$(bal);
+  document.getElementById('rDayRisk').textContent    = fmt$(dayRisk);
+  document.getElementById('rMaxPos').textContent     = fmt$(maxPos);
+  document.getElementById('rFees').textContent       = fmt$(fees);
+  document.getElementById('rSlippage').textContent   = fmt$(slippage);
+  document.getElementById('rTotalCost').textContent  = fmt$(totalCost);
+  document.getElementById('rBreakeven').textContent  = fmt$(totalCost) + ' just to break even';
+
+  // Today stats
+  const todayStr   = today();
+  const todayTrades = state.trades.filter(t=>t.date===todayStr);
+  const todayPL    = todayTrades.reduce((s,t)=>s+t.netPL,0);
+  const riskUsed   = Math.abs(Math.min(todayPL,0)) / bal * 100;
+  const canTrade   = riskUsed < 1.5 && todayTrades.length < 3;
+
+  document.getElementById('todayTrades').textContent = todayTrades.length;
+  const tplEl = document.getElementById('todayPL');
+  tplEl.textContent = fmt$(todayPL);
+  tplEl.className   = 'stat-value ' + (todayPL>=0?'g':'r');
+  const truEl = document.getElementById('todayRiskUsed');
+  truEl.textContent = riskUsed.toFixed(1)+'%';
+  truEl.className   = 'stat-value ' + (riskUsed>=1.5?'r':riskUsed>=1?'y':'g');
+  const ctEl = document.getElementById('canTrade');
+  ctEl.textContent  = canTrade ? 'YES' : 'STOP';
+  ctEl.className    = 'stat-value ' + (canTrade?'g':'r');
+}
+
+// ══════════════════════════════════════
+//  LOG TRADE CALCULATOR
+// ══════════════════════════════════════
+function calcLog(){
+  const entry   = parseFloat(document.getElementById('lEntry').value) || 0;
+  const exit    = parseFloat(document.getElementById('lExit').value) || 0;
+  const size    = parseFloat(document.getElementById('lSize').value) || 0;
+  const feeRate = parseFloat(document.getElementById('lFeeType').value) || 0.002;
+  if(!entry || !exit || !size) return;
+
+  const pricePct  = (exit - entry) / entry;
+  const grossPL   = size * pricePct;
+  const fees      = size * feeRate;
+  const slip      = size * 0.0005;
+  const netPL     = grossPL - fees - slip;
+  const roi       = netPL / size * 100;
+  const newBal    = currentBalance() + netPL;
+  const wl        = netPL >= 0 ? 'WIN' : 'LOSS';
+
+  const setEl = (id, val, cls='') => {
+    const el = document.getElementById(id);
+    el.textContent = val;
+    if(cls) el.className = 'rv ' + cls;
+  };
+
+  setEl('lGrossPL',  fmt$(grossPL),  grossPL>=0?'g':'r');
+  setEl('lFeesPaid', '-'+fmt$(fees), 'r');
+  setEl('lSlippage', '-'+fmt$(slip), 'r');
+  setEl('lNetPL',    fmt$(netPL),    (netPL>=0?'g':'r')+' big');
+  setEl('lROI',      fmtPct(roi),    roi>=0?'g':'r');
+  setEl('lNewBal',   fmt$(newBal),   'a');
+  const rEl = document.getElementById('lResult');
+  rEl.textContent = wl;
+  rEl.className   = 'rv ' + (wl==='WIN'?'g':'r');
+}
+
+// ══════════════════════════════════════
+//  SAVE TRADE
+// ══════════════════════════════════════
+function saveTrade(){
+  const entry   = parseFloat(document.getElementById('lEntry').value) || 0;
+  const exit    = parseFloat(document.getElementById('lExit').value) || 0;
+  const size    = parseFloat(document.getElementById('lSize').value) || 0;
+  const feeRate = parseFloat(document.getElementById('lFeeType').value) || 0.002;
+  const date    = document.getElementById('lDate').value || today();
+  const pair    = document.getElementById('lPair').value.toUpperCase() || '—';
+  const notes   = document.getElementById('lNotes').value;
+
+  if(!entry || !exit || !size){
+    alert('Please fill in Entry Price, Exit Price, and Position Size.');
+    return;
+  }
+
+  const pricePct = (exit - entry) / entry;
+  const grossPL  = size * pricePct;
+  const fees     = size * feeRate;
+  const slip     = size * 0.0005;
+  const netPL    = grossPL - fees - slip;
+  const roi      = netPL / size * 100;
+  const balBefore = currentBalance();
+  const balAfter  = balBefore + netPL;
+  const wl       = netPL >= 0 ? 'win' : 'loss';
+
+  const trade = {
+    id: Date.now(),
+    tradeNum: state.trades.length + 1,
+    date, pair, entry, exit, size,
+    grossPL, fees, slip, netPL, roi,
+    balBefore, balAfter, wl, notes,
+    feeRate
+  };
+
+  state.trades.push(trade);
+  if(state.trades.length === 1) state.startingBalance = balBefore;
+  save();
+
+  // Clear form
+  ['lEntry','lExit','lSize','lNotes'].forEach(id=>{ document.getElementById(id).value=''; });
+  ['lGrossPL','lFeesPaid','lSlippage','lNetPL','lROI','lNewBal','lResult'].forEach(id=>{
+    document.getElementById(id).textContent='—';
+    document.getElementById(id).className='rv';
+  });
+
+  calcSizer();
+  alert('Trade #' + trade.tradeNum + ' saved. ' + (wl==='win'?'✅ WIN':'❌ LOSS') + ' | Net: ' + fmt$(netPL));
+}
+
+// ══════════════════════════════════════
+//  RENDER JOURNAL
+// ══════════════════════════════════════
+function renderJournal(){
+  const trades = state.trades;
+  const wins   = trades.filter(t=>t.wl==='win');
+  const losses = trades.filter(t=>t.wl==='loss');
+  const totalPL   = trades.reduce((s,t)=>s+t.netPL,0);
+  const totalFees = trades.reduce((s,t)=>s+t.fees+t.slip,0);
+  const grossW    = wins.reduce((s,t)=>s+t.netPL,0);
+  const grossL    = Math.abs(losses.reduce((s,t)=>s+t.netPL,0));
+  const pf        = grossL>0?(grossW/grossL).toFixed(2):wins.length>0?'∞':'—';
+  const avgWin    = wins.length>0?grossW/wins.length:0;
+  const avgLoss   = losses.length>0?-grossL/losses.length:0;
+  const wr        = trades.length>0?(wins.length/trades.length*100).toFixed(1)+'%':'—';
+
+  document.getElementById('jTotal').textContent   = trades.length;
+  document.getElementById('jProgress').textContent= trades.length+' / 365';
+  document.getElementById('jProgBar').style.width = Math.min(trades.length/365*100,100)+'%';
+  document.getElementById('jWR').textContent      = wr;
+  document.getElementById('jWL').textContent      = wins.length+'W / '+losses.length+'L';
+  const plEl = document.getElementById('jNetPL');
+  plEl.textContent = fmt$(totalPL);
+  plEl.className   = 'stat-value '+(totalPL>=0?'g':'r');
+  document.getElementById('jAvgWin').textContent  = avgWin?fmt$(avgWin):'—';
+  document.getElementById('jAvgLoss').textContent = avgLoss?fmt$(avgLoss):'—';
+  document.getElementById('jPF').textContent      = pf;
+  document.getElementById('jFees').textContent    = fmt$(totalFees);
+  document.getElementById('jStartBal').textContent= fmt$(state.startingBalance||1000);
+  document.getElementById('hdrBal').textContent   = fmt$(currentBalance());
+
+  const tbody = document.getElementById('jBody');
+  tbody.innerHTML = [...trades].reverse().map(t=>`
+    <tr>
+      <td style="color:var(--dim)">#${t.tradeNum}</td>
+      <td>${t.date}</td>
+      <td style="color:var(--accent);font-weight:700">${t.pair}</td>
+      <td>${fmtPrice(t.entry)}</td>
+      <td>${fmtPrice(t.exit)}</td>
+      <td>$${t.size.toFixed(0)}</td>
+      <td style="color:${t.grossPL>=0?'var(--green)':'var(--red)'}">${fmt$(t.grossPL)}</td>
+      <td style="color:var(--red)">-${fmt$(t.fees+t.slip)}</td>
+      <td style="color:${t.netPL>=0?'var(--green)':'var(--red)'};font-weight:700">${fmt$(t.netPL)}</td>
+      <td style="color:${t.roi>=0?'var(--green)':'var(--red)'}">${fmtPct(t.roi)}</td>
+      <td style="color:var(--accent)">${fmt$(t.balAfter)}</td>
+      <td><span class="badge ${t.wl}">${t.wl.toUpperCase()}</span></td>
+      <td style="color:var(--dim);max-width:150px;overflow:hidden;text-overflow:ellipsis">${t.notes||'—'}</td>
+      <td><button class="del" onclick="deleteTrade(${t.id})">✕</button></td>
+    </tr>`).join('');
+}
+
+function fmtPrice(n){
+  if(!n) return '—';
+  if(n>=1000) return n.toFixed(2);
+  if(n>=1)    return n.toFixed(4);
+  if(n>=0.01) return n.toFixed(5);
+  return n.toFixed(8);
+}
+
+function deleteTrade(id){
+  if(!confirm('Delete this trade?')) return;
+  state.trades = state.trades.filter(t=>t.id!==id);
+  // Recalculate trade numbers
+  state.trades.forEach((t,i)=>{ t.tradeNum=i+1; });
+  save();
+  renderJournal();
+  calcSizer();
+}
+
+function clearAll(){
+  if(!confirm('Clear ALL trades? This cannot be undone.')) return;
+  state.trades = [];
+  save();
+  renderJournal();
+  calcSizer();
+}
+
+// ══════════════════════════════════════
+//  MONTHLY BREAKDOWN
+// ══════════════════════════════════════
+function renderMonthly(){
+  const months = {};
+  state.trades.forEach(t=>{
+    const key = t.date.slice(0,7); // YYYY-MM
+    if(!months[key]) months[key]={trades:[],netPL:0,fees:0,wins:0,losses:0};
+    months[key].trades.push(t);
+    months[key].netPL  += t.netPL;
+    months[key].fees   += t.fees+t.slip;
+    if(t.wl==='win') months[key].wins++;
+    else months[key].losses++;
+  });
+
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  document.getElementById('monthGrid').innerHTML = Object.entries(months)
+    .sort(([a],[b])=>a>b?-1:1)
+    .map(([key,m])=>{
+      const wr = m.trades.length>0?((m.wins/m.trades.length)*100).toFixed(0)+'%':'—';
+      const [y,mo] = key.split('-');
+      const mName = monthNames[parseInt(mo)-1]+' '+y;
+      return `<div class="month-card">
+        <div class="month-title">${mName}</div>
+        <div class="mrow"><span>Trades</span><span>${m.trades.length}</span></div>
+        <div class="mrow"><span>Win Rate</span><span style="color:${parseInt(wr)>=50?'var(--green)':'var(--red)'}">${wr}</span></div>
+        <div class="mrow"><span>Wins / Losses</span><span>${m.wins}W / ${m.losses}L</span></div>
+        <div class="mrow"><span>Net P&L</span><span style="color:${m.netPL>=0?'var(--green)':'var(--red)'}">${fmt$(m.netPL)}</span></div>
+        <div class="mrow"><span>Fees Paid</span><span style="color:var(--red)">-${fmt$(m.fees)}</span></div>
+      </div>`;
+    }).join('') || '<div style="color:var(--dim);font-size:12px;">No trades yet</div>';
+
+  // Quarterly
+  const quarters = {};
+  Object.entries(months).forEach(([key,m])=>{
+    const mo   = parseInt(key.slice(5,7));
+    const yr   = key.slice(0,4);
+    const q    = 'Q'+(Math.ceil(mo/3))+' '+yr;
+    if(!quarters[q]) quarters[q]={trades:0,netPL:0,wins:0,losses:0,fees:0};
+    quarters[q].trades += m.trades.length;
+    quarters[q].netPL  += m.netPL;
+    quarters[q].wins   += m.wins;
+    quarters[q].losses += m.losses;
+    quarters[q].fees   += m.fees;
+  });
+
+  document.getElementById('quarterGrid').innerHTML = Object.entries(quarters)
+    .sort(([a],[b])=>a>b?-1:1)
+    .map(([q,d])=>{
+      const wr = d.trades>0?((d.wins/d.trades)*100).toFixed(0)+'%':'—';
+      return `<div class="month-card" style="border-left:3px solid var(--accent);">
+        <div class="month-title" style="color:var(--accent)">${q}</div>
+        <div class="mrow"><span>Total Trades</span><span>${d.trades}</span></div>
+        <div class="mrow"><span>Win Rate</span><span style="color:${parseInt(wr)>=50?'var(--green)':'var(--red)'}">${wr}</span></div>
+        <div class="mrow"><span>Wins / Losses</span><span>${d.wins}W / ${d.losses}L</span></div>
+        <div class="mrow"><span>Net P&L</span><span style="color:${d.netPL>=0?'var(--green)':'var(--red)'}">${fmt$(d.netPL)}</span></div>
+        <div class="mrow"><span>Fees Paid</span><span style="color:var(--red)">-${fmt$(d.fees)}</span></div>
+      </div>`;
+    }).join('') || '<div style="color:var(--dim);font-size:12px;">No trades yet</div>';
+}
+
+// ══════════════════════════════════════
+//  COMPOUND TRACKER
+// ══════════════════════════════════════
+function renderCompound(){
+  const trades = state.trades;
+  const start  = state.startingBalance || 1000;
+  const cur    = currentBalance();
+  const total  = trades.length;
+  const ret    = total>0?((cur-start)/start*100):0;
+  const avgNet = total>0?trades.reduce((s,t)=>s+t.netPL,0)/total:0;
+  const avgPct = total>0?avgNet/start*100:0;
+
+  // Projected at 365 trades with current avg
+  const projected = start * Math.pow(1 + avgPct/100, 365);
+
+  document.getElementById('cTotal').textContent    = total;
+  document.getElementById('cProgBar').style.width  = Math.min(total/365*100,100)+'%';
+  document.getElementById('cStart').textContent    = fmt$(start);
+  document.getElementById('cCurrent').textContent  = fmt$(cur);
+  const retEl = document.getElementById('cReturn');
+  retEl.textContent = fmtPct(ret);
+  retEl.className   = 'stat-value '+(ret>=0?'g':'r');
+  document.getElementById('cAvgTrade').textContent = total>0?fmt$(avgNet):'—';
+  document.getElementById('cProjected').textContent = total>0?fmt$(projected):'—';
+  document.getElementById('hdrBal').textContent    = fmt$(cur);
+
+  // Chart
+  drawCompoundChart(trades, start);
+
+  // Recent trades table
+  const recent = [...trades].slice(-20).reverse();
+  document.getElementById('cBody').innerHTML = recent.map(t=>`
+    <tr>
+      <td style="color:var(--dim)">#${t.tradeNum}</td>
+      <td>${t.date}</td>
+      <td style="color:var(--accent)">${t.pair}</td>
+      <td style="color:${t.netPL>=0?'var(--green)':'var(--red)'};font-weight:700">${fmt$(t.netPL)}</td>
+      <td style="color:var(--accent)">${fmt$(t.balAfter)}</td>
+      <td style="color:${t.netPL>=0?'var(--green)':'var(--red)'}">${fmtPct(t.netPL/t.balBefore*100)}</td>
+      <td><span class="badge ${t.wl}">${t.wl.toUpperCase()}</span></td>
+    </tr>`).join('') || '<tr><td colspan="7" style="color:var(--dim);text-align:center;padding:20px;">No trades yet</td></tr>';
+}
+
+function drawCompoundChart(trades, start){
+  const canvas = document.getElementById('compChart');
+  const ctx    = canvas.getContext('2d');
+  const W      = canvas.parentElement.offsetWidth - 32;
+  const H      = 200;
+  canvas.width  = W;
+  canvas.height = H;
+  ctx.clearRect(0,0,W,H);
+
+  if(!trades.length){
+    ctx.fillStyle = '#4a6070';
+    ctx.font = '12px IBM Plex Mono';
+    ctx.fillText('No trades yet — log your first trade to see the curve', 20, H/2);
+    return;
+  }
+
+  // Actual balance curve
+  const actualPoints = [start, ...trades.map(t=>t.balAfter)];
+
+  // Theoretical: 3% per trade compound
+  const theorPoints = [];
+  let th = start;
+  for(let i=0;i<=trades.length;i++){
+    theorPoints.push(th);
+    th *= 1.03;
+  }
+
+  const allVals = [...actualPoints, ...theorPoints];
+  const maxVal  = Math.max(...allVals);
+  const minVal  = Math.min(...allVals);
+  const range   = maxVal - minVal || 1;
+
+  const pad = {top:20,right:20,bottom:30,left:70};
+  const cW  = W - pad.left - pad.right;
+  const cH  = H - pad.top - pad.bottom;
+  const n   = actualPoints.length;
+
+  function xp(i){ return pad.left + (i/(n-1||1))*cW; }
+  function yp(v){ return pad.top + cH - ((v-minVal)/range)*cH; }
+
+  // Grid
+  ctx.strokeStyle='#1a2535';
+  ctx.lineWidth=1;
+  [0,0.25,0.5,0.75,1].forEach(t=>{
+    const y = pad.top + t*cH;
+    ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(W-pad.right,y); ctx.stroke();
+    const val = maxVal - t*(maxVal-minVal);
+    ctx.fillStyle='#4a6070'; ctx.font='10px IBM Plex Mono';
+    ctx.fillText(val>=1000?'$'+(val/1000).toFixed(1)+'K':'$'+val.toFixed(0), 2, y+4);
+  });
+
+  // Theoretical line
+  ctx.strokeStyle='rgba(255,215,0,.35)';
+  ctx.lineWidth=1.5;
+  ctx.setLineDash([4,4]);
+  ctx.beginPath();
+  theorPoints.forEach((v,i)=>{ if(i===0) ctx.moveTo(xp(i),yp(v)); else ctx.lineTo(xp(i),yp(v)); });
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Actual line
+  ctx.strokeStyle='var(--accent)';
+  ctx.lineWidth=2.5;
+  ctx.beginPath();
+  actualPoints.forEach((v,i)=>{ if(i===0) ctx.moveTo(xp(i),yp(v)); else ctx.lineTo(xp(i),yp(v)); });
+  ctx.stroke();
+
+  // Dots on actual
+  actualPoints.forEach((v,i)=>{
+    if(i===0) return;
+    const t = trades[i-1];
+    ctx.fillStyle = t.wl==='win'?'var(--green)':'var(--red)';
+    ctx.beginPath();
+    ctx.arc(xp(i),yp(v),3,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  // Legend
+  ctx.font='10px IBM Plex Mono';
+  ctx.fillStyle='var(--accent)'; ctx.fillText('— Actual', W-140, 16);
+  ctx.fillStyle='rgba(255,215,0,.8)'; ctx.fillText('-- 3% model', W-70, 16);
+
+  // X labels
+  ctx.fillStyle='#4a6070';
+  [0, Math.floor(n/2), n-1].forEach(i=>{
+    if(i<n){
+      const lbl = i===0?'Start':i===n-1?'Now':'Trade '+(i);
+      ctx.fillText(lbl, xp(i)-20, H-8);
+    }
+  });
+}
+
+// ══════════════════════════════════════
+//  EXPORT CSV
+// ══════════════════════════════════════
+function exportCSV(){
+  if(!state.trades.length){ alert('No trades to export.'); return; }
+  const headers = ['Trade#','Date','Pair','Entry','Exit','Size$','GrossP&L','Fees','Slippage','NetP&L','ROI%','BalanceBefore','BalanceAfter','W/L','Notes'];
+  const rows = state.trades.map(t=>[
+    t.tradeNum,t.date,t.pair,t.entry,t.exit,t.size.toFixed(2),
+    t.grossPL.toFixed(2),(t.fees).toFixed(2),(t.slip||0).toFixed(2),
+    t.netPL.toFixed(2),t.roi.toFixed(2),t.balBefore.toFixed(2),
+    t.balAfter.toFixed(2),t.wl.toUpperCase(),'"'+(t.notes||'')+'"'
+  ].join(','));
+  const csv  = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv],{type:'text/csv'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href=url; a.download='qv_journal_'+today()+'.csv'; a.click();
+}
+
+// ══════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════
+document.getElementById('lDate').value = today();
+calcSizer();
+window.addEventListener('resize',()=>{ if(document.getElementById('tab-compound').classList.contains('active')) renderCompound(); });
+</script>
+<a href="index.html" style="position:fixed;bottom:20px;left:20px;z-index:9998;display:flex;align-items:center;gap:8px;background:rgba(9,12,22,.95);border:1px solid rgba(0,212,255,.25);color:#00d4ff;text-decoration:none;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;padding:8px 14px;border-radius:8px;letter-spacing:1px;backdrop-filter:blur(10px);transition:all .2s;" onmouseover="this.style.borderColor='rgba(0,212,255,.6)'" onmouseout="this.style.borderColor='rgba(0,212,255,.25)'">⌂ HOME</a>
+</body>
+</html>
